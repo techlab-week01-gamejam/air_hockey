@@ -64,7 +64,14 @@ std::string SoundManager::GetExecutablePath() {
 	char path[MAX_PATH];
 	GetModuleFileNameA(nullptr, path, MAX_PATH);
 	std::string exePath(path);
-	return exePath.substr(0, exePath.find_last_of("\\/"));
+
+	// 실행 파일이 있는 디렉터리 가져오기
+	std::string currentDir = exePath.substr(0, exePath.find_last_of("\\/"));
+
+	// 한 단계 상위 폴더로 이동 후 "resource/sound/" 추가
+	std::string resourcePath = currentDir + "\\..\\resource\\sound";
+
+	return resourcePath;
 }
 
 void SoundManager::LoadSound(const std::string& SoundName, const std::string& FilePath, bool Loop = false) {
