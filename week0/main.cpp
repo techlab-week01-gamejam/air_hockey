@@ -453,6 +453,14 @@ public:
     void Move() {
         Location.x += Velocity.x;
         Location.y += Velocity.y;
+        if (Velocity.x > 0.001f)
+            Velocity.x -= 0.0001f;
+        else if (Velocity.x < -0.001f)
+            Velocity.x += 0.0001f;
+        if (Velocity.y > 0.001f)
+            Velocity.y -= 0.0001f;
+        else if (Velocity.y < -0.001f)
+            Velocity.y += 0.0001f;
     }
 
     // 벽과의 충돌 처리
@@ -868,14 +876,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // A의 초기 위치 및 목표 위치 설정
     float initialXA = offsetPlayerA.x; // A의 원래 위치
-    float targetXA = offsetPlayerA.x + 0.3f; // A가 이동할 목표 위치
+    float targetXA = offsetPlayerA.x + 0.6f; // A가 이동할 목표 위치
 
     bool isMovingRightA = false;  // A가 오른쪽으로 이동 중인지
     bool isReturningA = false;    // A가 원래 위치로 돌아오는 중인지
 
     // B의 초기 위치 및 목표 위치 설정
     float initialXB = offsetPlayerB.x; // B의 원래 위치
-    float targetXB = offsetPlayerB.x - 0.3f; // B가 이동할 목표 위치
+    float targetXB = offsetPlayerB.x - 0.6f; // B가 이동할 목표 위치
 
     bool isMovingLeftB = false;  // B가 왼쪽으로 이동 중인지
     bool isReturningB = false;   // B가 원래 위치로 돌아오는 중인지
