@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <chrono>
 
 // D3D 사용에 필요한 라이브러리들을 링크합니다.
 #pragma comment(lib, "user32")
@@ -436,6 +437,14 @@ public:
     void Move() {
         Location.x += Velocity.x;
         Location.y += Velocity.y;
+        if (Velocity.x > 0.001f)
+            Velocity.x -= 0.0001f;
+        else if (Velocity.x < -0.001f)
+            Velocity.x += 0.0001f;
+        if (Velocity.y > 0.001f)
+            Velocity.y -= 0.0001f;
+        else if (Velocity.y < -0.001f)
+            Velocity.y += 0.0001f;
     }
 
     // 벽과의 충돌 처리
@@ -550,8 +559,12 @@ public:
     UCork(FVector3 Location, FVector3 Velocity, float Radius, float Mass) : Location(Location), Velocity(Velocity), Radius(Radius), Mass(Mass) {}
 
 
-    void SetLocationY(float deltaY) {
-        Location.y += deltaY;
+    void SetLocation(FVector3 delta) {
+        Location = delta;
+    }
+
+    void SetVelocity(FVector3 delta) {
+        Velocity = delta;
     }
 
 
@@ -730,6 +743,65 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
     return 0;
 }
 
+void UpdatePlayer(FVector3& offset, FVector3& speed, FVector3& targetSpeed,
+    float normalSpeedMultiplier, float fastSpeedMultiplier,
+    int keyUp, int keyDown, int keyLeft, int keyRight, bool isPlayerA) {
+
+    float minX = isPlayerA ? -0.88f : 0.15f;
+    float maxX = isPlayerA ? -0.15f : 0.88f;
+
+    // LShift & RShift 속도 증가 기능
+    float speedMultiplier = normalSpeedMultiplier;
+    if (isPlayerA && (GetAsyncKeyState(VK_LSHIFT) & 0x8000)) {
+        speedMultiplier = fastSpeedMultiplier; // A 플레이어 속도 증가
+    }
+    if (!isPlayerA && (GetAsyncKeyState(VK_RSHIFT) & 0x8000)) {
+        speedMultiplier = fastSpeedMultiplier; // B 플레이어 속도 증가
+    }
+
+    // Y축 이동
+    if (GetAsyncKeyState(keyUp) & 0x8000 && offset.y + speed.y * speedMultiplier < 0.405f) {
+        speed.y = targetSpeed.y * speedMultiplier;
+    }
+    else if (GetAsyncKeyState(keyDown) & 0x8000 && offset.y + speed.y * speedMultiplier > -0.405f) {
+        speed.y = -targetSpeed.y * speedMultiplier;
+    }
+    else {
+        speed.y = 0; // 키를 안 누르면 멈춤
+    }
+
+    // X축 이동
+    if (GetAsyncKeyState(keyLeft) & 0x8000 && offset.x + speed.x * speedMultiplier > minX) {
+        speed.x = -targetSpeed.x * speedMultiplier;
+    }
+    else if (GetAsyncKeyState(keyRight) & 0x8000 && offset.x + speed.x * speedMultiplier < maxX) {
+        speed.x = targetSpeed.x * speedMultiplier;
+    }
+    else {
+        speed.x = 0; // 키를 안 누르면 멈춤
+    }
+
+    // 벽 처리
+    if (offset.x < minX) {
+        offset.x = minX;
+        speed.x = 0;
+    }
+    if (offset.x > maxX) {
+        offset.x = maxX;
+        speed.x = 0;
+    }
+    if (offset.y > 0.405f) {
+        offset.y = 0.405f;
+        speed.y = 0;
+    }
+    if (offset.y < -0.405f) {
+        offset.y = -0.405f;
+        speed.y = 0;
+    }
+
+    offset += speed;
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
     // 윈도우 클래스 이름
     WCHAR WindowClass[] = L"JungleWindowClass";
@@ -804,8 +876,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     ID3D11Buffer* vertexBufferPlayerB = renderer.CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
 
     // 플레이어1, 플레이어2 offset
-    FVector3 offsetPlayerA(-0.875f, 0.0f, 0.0f);
-    FVector3 offsetPlayerB(0.875f, 0.0f, 0.0f);
+    FVector3 offsetPlayerA(-0.88f, 0.0f, 0.0f);
+    FVector3 offsetPlayerB(0.88f, 0.0f, 0.0f);
 
     bool bIsExit = false;
 
@@ -827,16 +899,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     LARGE_INTEGER startTime, endTime;
     double elapsedTime = 0.0;
 
-    //플레이어A, B 이동속도
-    float moveA = 0.03f;
-    float moveB = 0.03f;
+    ////플레이어A, B 이동속도
+    //float moveA = 0.03f;
+    //float moveB = 0.03f;
+
+    FVector3 currentSpeedA;
+    FVector3 currentSpeedB;
+    FVector3 targetSpeedA(0.03f, 0.03f, 0.0f);
+    FVector3 targetSpeedB(0.03f, 0.03f, 0.0f);
 
     // 플레이어 Paddle
     //UPaddle* Paddle1 = new UPaddle(offsetPlayerA, moveA, 0.05f, 0.25f);
     //UPaddle* Paddle2 = new UPaddle(offsetPlayerB, moveB, 0.05f, 0.25f);
 
-    UCork* CorkA = new UCork(FVector3(-0.875f, 0.0f, 0.0f), moveA, 0.07f, 0.7f);
-    UCork* CorkB = new UCork(FVector3(0.875f, 0.0f, 0.0f), moveB, 0.07f, 0.7f);
+    UCork* CorkA = new UCork(FVector3(-0.88f, 0.0f, 0.0f), currentSpeedA, 0.07f, 0.7f);
+    UCork* CorkB = new UCork(FVector3(0.88f, 0.0f, 0.0f), currentSpeedB, 0.07f, 0.7f);
 
     // Main Loop (Quit Message가 들어오기 전까지 아래 Loop를 무한히 실행하게 됨)
     while (bIsExit == false) {
@@ -858,25 +935,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 break;
             }
         }
-        if (GetAsyncKeyState(0x57) & 0x8000 && offsetPlayerA.y + moveA < 0.405f) {
-            offsetPlayerA.y += moveA;
-            CorkA->SetLocationY(moveA);
-        }
 
-        if (GetAsyncKeyState(0x53) & 0x8000 && offsetPlayerA.y - moveA > -0.405f) {
-            offsetPlayerA.y -= moveA;
-            CorkA->SetLocationY(-moveA);
-        }
+        UpdatePlayer(offsetPlayerA, currentSpeedA, targetSpeedA, 1.0f, 1.2f,
+            0x57, 0x53, 0x41, 0x44, true);
+        CorkA->SetLocation(offsetPlayerA);
+        CorkA->SetVelocity(currentSpeedA);
 
-        if (GetAsyncKeyState(VK_UP) & 0x8000 && offsetPlayerB.y + moveB < 0.405f) {
-            offsetPlayerB.y += moveB;
-            CorkB->SetLocationY(moveB);
-        }
-
-        if (GetAsyncKeyState(VK_DOWN) & 0x8000 && offsetPlayerB.y - moveB > -0.405f) {
-            offsetPlayerB.y -= moveB;
-            CorkB->SetLocationY(-moveB);
-        }
+        UpdatePlayer(offsetPlayerB, currentSpeedB, targetSpeedB, 1.0f, 1.5f,
+            VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, false);
+        CorkB->SetLocation(offsetPlayerB);
+        CorkB->SetVelocity(currentSpeedB);
 
         BallManager.UpdateBalls(CorkA, CorkB);
 
