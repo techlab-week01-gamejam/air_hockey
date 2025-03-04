@@ -429,7 +429,7 @@ public:
         Radius = RandomFloat(0.05f, 0.15f); // 0.05~0.15 사이의 임의 크기
         Mass = Radius * 10.0f; // 크기에 비례하는 질량
         Location = FVector3(RandomFloat(-0.8f, 0.8f), RandomFloat(-0.8f, 0.8f), 0.0f);
-        Velocity = FVector3(RandomFloat(-0.02f, 0.02f), RandomFloat(-0.02f, 0.02f), 0.0f);
+        Velocity = FVector3(0.02f, RandomFloat(-0.013f, 0.013f), 0.0f);
     }
 
     // 공을 이동시키는 함수
@@ -440,10 +440,10 @@ public:
 
     // 벽과의 충돌 처리
     void CheckWallCollision() {
-        const float leftBorder = -1.0f + Radius;
-        const float rightBorder = 1.0f - Radius;
-        const float topBorder = 0.5f - Radius;
-        const float bottomBorder = -0.5f + Radius;
+        const float leftBorder = -0.95f + Radius;
+        const float rightBorder = 0.95f - Radius;
+        const float topBorder = 0.475f - Radius;
+        const float bottomBorder = -0.475f + Radius;
 
         if (Location.x < leftBorder) {
             Location.x = leftBorder;  // 위치 보정
@@ -530,8 +530,8 @@ public:
     }
 
     bool CheckBallCollision(UBall& Ball) {
-        float closestX = (Ball.Location.x < Location.x) ? Location.x : (Ball.Location.x > Location.x + Width) ? (Location.x + Width) : Ball.Location.x;
-        float closestY = (Ball.Location.y < Location.y) ? Location.y : (Ball.Location.y > Location.y + Height) ? (Location.y + Height) : Ball.Location.y;
+        float closestX = (Ball.Location.x < Location.x - Width / 2) ? Location.x - Width / 2 : (Ball.Location.x > Location.x + Width / 2) ? (Location.x + Width / 2) : Ball.Location.x;
+        float closestY = (Ball.Location.y < Location.y - Height / 2) ? Location.y - Height / 2 : (Ball.Location.y > Location.y + Height / 2) ? (Location.y + Height / 2) : Ball.Location.y;
 
         float distanceX = Ball.Location.x - closestX;
         float distanceY = Ball.Location.y - closestY;
@@ -622,26 +622,48 @@ public:
             BallList[i]->CheckWallCollision();
             bool IsCollisionWithPaddle = Paddle1->CheckBallCollision(*BallList[i]);
             if (IsCollisionWithPaddle) {
+                BallList[i]->Location.x = Paddle1->Location.x + BallList[i]-> Radius + Paddle1->Width / 2;  // 패들 위로 이동
+
                 float hitPosition = (BallList[i]->Location.y - Paddle1->Location.y) / Paddle1->Height;
                 float reflectionAngle = -45 + (hitPosition * 90);
 
                 float speed = sqrt(BallList[i]->Velocity.x * BallList[i]->Velocity.x + BallList[i]->Velocity.y * BallList[i]->Velocity.y);
 
+                float speed_x = -speed * sin(reflectionAngle * 3.14 / 180.0);
 
-                BallList[i]->Velocity.x = -speed * sin(reflectionAngle * 3.14 / 180.0);
-                BallList[i]->Velocity.y = speed * cos(reflectionAngle * 3.14 / 180.0) + Paddle1->Velocity.y * 0.5;
+                if (fabs(speed_x) < 0.015f) {
+                    speed_x = speed_x < 0 ? -0.015f : 0.015f;
+                }
+
+                float speed_y = speed * cos(reflectionAngle * 3.14 / 180.0);
+
+                BallList[i]->Velocity.x = speed_x;
+                BallList[i]->Velocity.y = speed_y;
+
             }
 
             bool IsCollisionWithPaddle2 = Paddle2->CheckBallCollision(*BallList[i]);
             if (IsCollisionWithPaddle2) {
-                float hitPosition = (BallList[i]->Location.y - Paddle1->Location.y) / Paddle1->Height;
+                BallList[i]->Location.x = Paddle2->Location.x - BallList[i]->Radius - Paddle2->Width / 2;  // 패들 위로 이동
+                
+                // hitPosition이 y축에서 Paddle의 중심 위이면
+                float hitPosition = (BallList[i]->Location.y - Paddle2->Location.y) / Paddle2->Height;
                 float reflectionAngle = -45 + (hitPosition * 90);
 
                 float speed = sqrt(BallList[i]->Velocity.x * BallList[i]->Velocity.x + BallList[i]->Velocity.y * BallList[i]->Velocity.y);
 
 
-                BallList[i]->Velocity.x = -speed * sin(reflectionAngle * 3.14 / 180.0);
-                BallList[i]->Velocity.y = speed * cos(reflectionAngle * 3.14 / 180.0) + Paddle1->Velocity.y * 0.5;
+                float speed_x = -speed * sin(reflectionAngle * 3.14 / 180.0);
+
+                if (fabs(speed_x) < 0.015f) {
+                    speed_x = speed_x < 0 ? -0.015f : 0.015f;
+                }
+
+                float speed_y = speed * cos(reflectionAngle * 3.14 / 180.0);
+
+
+                BallList[i]->Velocity.x = speed_x;
+                BallList[i]->Velocity.y = speed_y;
             }
 
 
@@ -785,8 +807,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     ID3D11Buffer* vertexBufferPlayerB = renderer.CreateVertexBuffer(playerB, sizeof(playerB));
 
     // 플레이어1, 플레이어2 offset
-    FVector3 offsetPlayerA(-0.8f, 0.0f, 0.0f);
-    FVector3 offsetPlayerB(0.8f, 0.0f, 0.0f);
+    FVector3 offsetPlayerA(-0.9f, 0.0f, 0.0f);
+    FVector3 offsetPlayerB(0.9f, 0.0f, 0.0f);
 
     bool bIsExit = false;
 
@@ -809,8 +831,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     double elapsedTime = 0.0;
 
     //플레이어A, B 이동속도
-    float moveA = 0.01f;
-    float moveB = 0.01f;
+    float moveA = 0.03f;
+    float moveB = 0.03f;
 
     // 플레이어 Paddle
     UPaddle* Paddle1 = new UPaddle(offsetPlayerA, moveA, 0.05f, 0.25f);
@@ -838,23 +860,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
             else if (msg.message == WM_KEYDOWN)
             {
-                if (GetAsyncKeyState(0x57) & 0x8000) {
+                if (GetAsyncKeyState(0x57) & 0x8000 && offsetPlayerA.y + moveA < 0.35f) {
                     offsetPlayerA.y += moveA;
                     Paddle1->Move(moveA);
-                    
                 }
 
-                if (GetAsyncKeyState(0x53) & 0x8000) {
+                if (GetAsyncKeyState(0x53) & 0x8000 && offsetPlayerA.y - moveA > -0.35f) {
                     offsetPlayerA.y -= moveA;
                     Paddle1->Move(-moveA);
                 }
 
-                if (GetAsyncKeyState(VK_UP) & 0x8000) {
+                if (GetAsyncKeyState(VK_UP) & 0x8000 && offsetPlayerB.y + moveB < 0.35f) {
                     offsetPlayerB.y += moveB;
                     Paddle2->Move(moveB);
                 }
 
-                if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
+                if (GetAsyncKeyState(VK_DOWN) & 0x8000 && offsetPlayerB.y - moveB > -0.35f) {
                     offsetPlayerB.y -= moveB;
                     Paddle2->Move(-moveB);
                 }
