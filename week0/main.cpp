@@ -788,52 +788,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     FVector3 offsetPlayerA(-0.8f, 0.0f, 0.0f);
     FVector3 offsetPlayerB(0.8f, 0.0f, 0.0f);
 
-    // 가로선 세로선 생성
-    UINT numVerticeCube = sizeof(cube_vertices) / sizeof(FVertexSimple);
-    FVertexSimple horizontal[36];
-    FVertexSimple vertical[36];
-
-    for (UINT i = 0; i < numVerticeCube; i++)
-    {
-        //가로선 스케일링
-        horizontal[i] = cube_vertices[i];
-        horizontal[i].x *= 2.0f;
-        horizontal[i].y *= 0.05f;
-
-        //세로선 스케일링
-        vertical[i] = cube_vertices[i];
-        vertical[i].x *= 0.1f;
-        vertical[i].y *= 1.0f;
-
-    }
-    ID3D11Buffer* vertexBufferHorizontal = renderer.CreateVertexBuffer(horizontal, sizeof(horizontal));
-    ID3D11Buffer* vertexBufferVertical = renderer.CreateVertexBuffer(vertical, sizeof(vertical));
-
-    //가로선, 세로선 offset
-    FVector3 offsetHorizontal(0.0f, 0.5f, 0.0f);
-    FVector3 offsetVertical(-1.0f, 0.0f, 0.0f);
-
-    // 플레이어A, B 막대기
-    FVertexSimple playerA[36];
-    FVertexSimple playerB[36];
-
-    for (UINT i = 0; i < numVerticeCube; i++)
-    {
-        playerA[i] = cube_vertices[i];
-        playerA[i].x *= 0.05f;
-        playerA[i].y *= 0.25f;
-
-        playerB[i] = cube_vertices[i];
-        playerB[i].x *= 0.05f;
-        playerB[i].y *= 0.25f;
-    }
-    ID3D11Buffer* vertexBufferPlayerA = renderer.CreateVertexBuffer(playerA, sizeof(playerA));
-    ID3D11Buffer* vertexBufferPlayerB = renderer.CreateVertexBuffer(playerB, sizeof(playerB));
-
-    // 플레이어1, 플레이어2 offset
-    FVector3 offsetPlayerA(-0.8f, 0.0f, 0.0f);
-    FVector3 offsetPlayerB(0.8f, 0.0f, 0.0f);
-
     bool bIsExit = false;
 
     // ImGui를 생성합니다.
