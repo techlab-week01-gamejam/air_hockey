@@ -86,3 +86,24 @@ void SoundManager::LoadSound(const std::string& SoundName, const std::string& Fi
 	std::cout << "[Log] 사운드 로드 완료: " << SoundName << std::endl;
 }
 
+void SoundManager::PlayBGM(const std::string& BGMName, float Volume = 1.0f) {
+	std::unordered_map<std::string, FMOD::Sound*>::iterator iter = SoundMap.find(BGMName);
+	if (SoundMap.end() == iter) {
+		std::cerr << "[Error] BGM을 찾을 수 없음: " << BGMName << std::endl;
+		return;
+	}
+
+	if (nullptr != CurrentBGM) {
+		CurrentBGM->release();
+		CurrentBGM = nullptr;
+	}
+
+	CurrentBGM = iter->second;
+
+	if (FMOD_OK == FMODSystem->playSound(CurrentBGM, nullptr, false, &BGMChannel)) {
+		BGMChannel->setVolume(Volume);
+		std::cout << "[Log] BGM 재성: " << BGMName << std::endl;
+	}
+}
+
+
