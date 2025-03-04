@@ -113,6 +113,13 @@ void SoundManager::PlayBGM(const std::string& BGMName, float Volume = 1.0f) {
 	}
 }
 
+void SoundManager::StopBGM() {
+	if (nullptr != BGMChannel) {
+		BGMChannel->stop();
+		std::cout << "[Log] BGM Á¤Áö" << std::endl;
+	}
+}
+
 void SoundManager::PlaySFX(const std::string& SFXName, float Volume = 1.0f) {
 	std::unordered_map<std::string, FMOD::Sound*>::iterator iter = SoundMap.find(SFXName);
 	if (SoundMap.end() == iter) {
