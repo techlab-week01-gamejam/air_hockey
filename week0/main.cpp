@@ -132,6 +132,23 @@ struct FVector3 {
         z /= Scalar;
         return *this;
     }
+
+    float Length() const {
+        return sqrtf(x * x + y * y + z * z);
+    }
+    float LengthSquared() const {
+        return (x * x + y * y + z * z);
+    }
+    FVector3 Normalized() const {
+        float length = Length();
+        if (length == 0) {
+            return FVector3(0, 0, 0);
+        }
+        return FVector3(x / length, y / length, z / length);
+    }
+    float Dot(const FVector3& Other) const {
+        return x * Other.x + y * Other.y + z * Other.z;
+    }
 };
 
 #include "Sphere.h"
@@ -498,8 +515,8 @@ public:
 
             Location += Correction;
             Other.Location -= Correction;
+            }
         }
-    }
 
     void Render(URenderer* renderer, ID3D11Buffer* vertexBuffer) {
         if (nullptr == vertexBuffer)
@@ -556,6 +573,14 @@ public:
 
     void SetVelocityY(float deltaY) {
         Velocity.y = deltaY;
+    }
+
+    void SetLocationX(float deltaX) {
+        Location.x += deltaX;
+    }
+
+    void SetVelocityX(float deltaX) {
+        Velocity.x = deltaX;
     }
 
     // Cork와 Ball 사이의 충돌 처리
@@ -841,6 +866,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     UCork* CorkA = new UCork(FVector3(-0.875f, 0.0f, 0.0f), 0.07f, 35.0f);
     UCork* CorkB = new UCork(FVector3(0.875f, 0.0f, 0.0f), 0.07f, 35.0f);
 
+    // A의 초기 위치 및 목표 위치 설정
+    float initialXA = offsetPlayerA.x; // A의 원래 위치
+    float targetXA = offsetPlayerA.x + 0.3f; // A가 이동할 목표 위치
+
+    bool isMovingRightA = false;  // A가 오른쪽으로 이동 중인지
+    bool isReturningA = false;    // A가 원래 위치로 돌아오는 중인지
+
+    // B의 초기 위치 및 목표 위치 설정
+    float initialXB = offsetPlayerB.x; // B의 원래 위치
+    float targetXB = offsetPlayerB.x - 0.3f; // B가 이동할 목표 위치
+
+    bool isMovingLeftB = false;  // B가 왼쪽으로 이동 중인지
+    bool isReturningB = false;   // B가 원래 위치로 돌아오는 중인지
+
     // Main Loop (Quit Message가 들어오기 전까지 아래 Loop를 무한히 실행하게 됨)
     while (bIsExit == false) {
         // 루프 시작 시간 기록
@@ -882,11 +921,73 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             CorkB->SetLocationY(-moveB);
             CorkB->SetVelocityY(-moveB);
         }
+        if (GetAsyncKeyState(VK_LSHIFT) & 0x8000 && !isMovingRightA && !isReturningA) {
+            isMovingRightA = true;
+        }
+
+        if (GetAsyncKeyState(VK_RSHIFT) & 0x8000 && !isMovingLeftB && !isReturningB) {
+            isMovingLeftB = true;
+        }
+
+        // A가 오른쪽으로 이동 중이라면
+        if (isMovingRightA) {
+            if (offsetPlayerA.x < targetXA) {
+                offsetPlayerA.x += 0.06f; // x 방향 이동 (속도)
+                CorkA->SetLocationX(0.06f);
+                CorkA->SetVelocityX(0.06f);
+            }
+            else {
+                isMovingRightA = false;
+                isReturningA = true; // 원래 위치로 돌아가기 시작
+            }
+        }
+
+        // A가 원래 위치로 돌아오는 중이라면
+        if (isReturningA) {
+            if (offsetPlayerA.x > initialXA) {
+                offsetPlayerA.x -= 0.06f; // x 방향 복귀 (속도)
+                CorkA->SetLocationX(-0.06f);
+                CorkA->SetVelocityX(-0.06f);
+            }
+            else {
+                isReturningA = false; // 복귀 완료
+            }
+        }
+
+        // B가 왼쪽으로 이동 중이라면
+        if (isMovingLeftB) {
+            if (offsetPlayerB.x > targetXB) {
+                offsetPlayerB.x -= 0.06f; // x 방향 이동 (속도)
+                CorkB->SetLocationX(-0.06f);
+                CorkB->SetVelocityX(-0.06f);
+            }
+            else {
+                isMovingLeftB = false;
+                isReturningB = true; // 원래 위치로 돌아가기 시작
+            }
+        }
+
+        // B가 원래 위치로 돌아오는 중이라면
+        if (isReturningB) {
+            if (offsetPlayerB.x < initialXB) {
+                offsetPlayerB.x += 0.06f; // x 방향 복귀 (속도)
+                CorkB->SetLocationX(0.06f);
+                CorkB->SetVelocityX(0.06f);
+            }
+            else {
+                isReturningB = false; // 복귀 완료
+            }
+        }
 
         BallManager.UpdateBalls(CorkA, CorkB);
         
         CorkA->SetVelocityY(0.0f);
         CorkB->SetVelocityY(0.0f);
+
+        if (!isMovingRightA && !isReturningA)
+            CorkA->SetVelocityX(0.0f);
+        if (!isMovingLeftB && !isReturningB)
+            CorkB->SetVelocityX(0.0f);
 
         // 준비 작업
         renderer.Prepare();
