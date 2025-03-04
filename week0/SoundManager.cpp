@@ -66,3 +66,23 @@ std::string SoundManager::GetExecutablePath() {
 	std::string exePath(path);
 	return exePath.substr(0, exePath.find_last_of("\\/"));
 }
+
+void SoundManager::LoadSound(const std::string& SoundName, const std::string& FilePath, bool Loop = false) {
+	if (SoundMap.find(SoundName) != SoundMap.end()) {
+		return; // 이미 로드된 사운드
+	}
+
+	std::string FullPath = GetExecutablePath() + "\\" + FilePath;
+
+	FMOD::Sound* NewSound = nullptr;
+	FMOD_MODE Mode = Loop ? FMOD_LOOP_NORMAL : FMOD_DEFAULT;
+
+	if (FMOD_OK != FMODSystem->createSound(FullPath.c_str(), Mode, nullptr, &NewSound)) {
+		std::cerr << "[Error] 사운드 로드 실패: " << FullPath << std::endl;
+		return;
+	}
+
+	SoundMap.insert(std::make_pair(SoundName, NewSound));
+	std::cout << "[Log] 사운드 로드 완료: " << SoundName << std::endl;
+}
+
