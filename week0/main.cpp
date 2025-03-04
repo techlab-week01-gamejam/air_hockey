@@ -547,13 +547,16 @@ public:
     float Radius;       // 공의 반지름
     float Mass;         // 공의 질량
 
-    UCork(FVector3 Location, FVector3 Velocity, float Radius, float Mass) : Location(Location), Velocity(Velocity), Radius(Radius), Mass(Mass) {}
+    UCork(FVector3 Location, float Radius, float Mass) : Location(Location), Radius(Radius), Mass(Mass) {}
 
 
     void SetLocationY(float deltaY) {
         Location.y += deltaY;
     }
 
+    void SetVelocityY(float deltaY) {
+        Velocity.y = deltaY;
+    }
 
     // Cork와 Ball 사이의 충돌 처리
     void ResolveCollision(UBall& Other) {
@@ -835,8 +838,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     //UPaddle* Paddle1 = new UPaddle(offsetPlayerA, moveA, 0.05f, 0.25f);
     //UPaddle* Paddle2 = new UPaddle(offsetPlayerB, moveB, 0.05f, 0.25f);
 
-    UCork* CorkA = new UCork(FVector3(-0.875f, 0.0f, 0.0f), moveA, 0.07f, 0.7f);
-    UCork* CorkB = new UCork(FVector3(0.875f, 0.0f, 0.0f), moveB, 0.07f, 0.7f);
+    UCork* CorkA = new UCork(FVector3(-0.875f, 0.0f, 0.0f), 0.07f, 35.0f);
+    UCork* CorkB = new UCork(FVector3(0.875f, 0.0f, 0.0f), 0.07f, 35.0f);
 
     // Main Loop (Quit Message가 들어오기 전까지 아래 Loop를 무한히 실행하게 됨)
     while (bIsExit == false) {
@@ -858,28 +861,32 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 break;
             }
         }
+
         if (GetAsyncKeyState(0x57) & 0x8000 && offsetPlayerA.y + moveA < 0.405f) {
             offsetPlayerA.y += moveA;
             CorkA->SetLocationY(moveA);
+            CorkA->SetVelocityY(moveA);
         }
-
         if (GetAsyncKeyState(0x53) & 0x8000 && offsetPlayerA.y - moveA > -0.405f) {
             offsetPlayerA.y -= moveA;
             CorkA->SetLocationY(-moveA);
+            CorkA->SetVelocityY(-moveA);
         }
-
         if (GetAsyncKeyState(VK_UP) & 0x8000 && offsetPlayerB.y + moveB < 0.405f) {
             offsetPlayerB.y += moveB;
             CorkB->SetLocationY(moveB);
+            CorkB->SetVelocityY(moveB);
         }
-
         if (GetAsyncKeyState(VK_DOWN) & 0x8000 && offsetPlayerB.y - moveB > -0.405f) {
             offsetPlayerB.y -= moveB;
             CorkB->SetLocationY(-moveB);
+            CorkB->SetVelocityY(-moveB);
         }
 
         BallManager.UpdateBalls(CorkA, CorkB);
-
+        
+        CorkA->SetVelocityY(0.0f);
+        CorkB->SetVelocityY(0.0f);
 
         // 준비 작업
         renderer.Prepare();
