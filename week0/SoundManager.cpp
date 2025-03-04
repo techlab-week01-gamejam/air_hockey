@@ -58,3 +58,11 @@ void SoundManager::Release() {
 		Instance = nullptr;
 	}
 }
+
+/* 실행 파일 경로 반환 */
+std::string SoundManager::GetExecutablePath() {
+	char path[MAX_PATH];
+	GetModuleFileNameA(nullptr, path, MAX_PATH);
+	std::string exePath(path);
+	return exePath.substr(0, exePath.find_last_of("\\/"));
+}
