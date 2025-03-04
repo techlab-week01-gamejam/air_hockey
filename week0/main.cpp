@@ -912,8 +912,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     //UPaddle* Paddle1 = new UPaddle(offsetPlayerA, moveA, 0.05f, 0.25f);
     //UPaddle* Paddle2 = new UPaddle(offsetPlayerB, moveB, 0.05f, 0.25f);
 
-    UCork* CorkA = new UCork(FVector3(-0.88f, 0.0f, 0.0f), currentSpeedA, 0.07f, 0.7f);
-    UCork* CorkB = new UCork(FVector3(0.88f, 0.0f, 0.0f), currentSpeedB, 0.07f, 0.7f);
+    UCork* CorkA = new UCork(FVector3(-0.88f, 0.0f, 0.0f), currentSpeedA, 0.07f, 10.0f);
+    UCork* CorkB = new UCork(FVector3(0.88f, 0.0f, 0.0f), currentSpeedB, 0.07f, 10.0f);
 
     // Main Loop (Quit Message가 들어오기 전까지 아래 Loop를 무한히 실행하게 됨)
     while (bIsExit == false) {
