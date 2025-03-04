@@ -476,7 +476,7 @@ public:
     // 두 공 사이의 충돌 처리
     void ResolveCollision(UBall& Other) {
         FVector3 Diff = Location - Other.Location;
-        float Distance = sqrtf(Diff.x * Diff.x + Diff.y * Diff.y);
+        float Distance = sqrt(Diff.x * Diff.x + Diff.y * Diff.y);
         float MinDist = Radius + Other.Radius;
 
         if (Distance < MinDist) // 충돌 발생
@@ -538,8 +538,48 @@ public:
 
         return (distanceX * distanceX + distanceY * distanceY) < (Ball.Radius * Ball.Radius);
     }
+};
+
+class UCork {
+public:
+    FVector3 Location;  // 공의 위치
+    FVector3 Velocity;  // 공의 속도
+    float Radius;       // 공의 반지름
+    float Mass;         // 공의 질량
+
+    UCork(FVector3 Location, FVector3 Velocity, float Radius, float Mass) : Location(Location), Velocity(Velocity), Radius(Radius), Mass(Mass) {}
 
 
+    void SetLocationY(float deltaY) {
+        Location.y += deltaY;
+    }
+
+
+    // Cork와 Ball 사이의 충돌 처리
+    void ResolveCollision(UBall& Other) {
+        FVector3 Diff = Location - Other.Location;
+        float Distance = sqrt(Diff.x * Diff.x + Diff.y * Diff.y);
+        float MinDist = Radius + Other.Radius;
+
+        if (Distance < MinDist) // 충돌 발생
+        {
+            FVector3 Normal = (Distance > 1e-6f) ? (Diff / Distance) : FVector3(0, 0, 0);
+            FVector3 RelativeVelocity = Velocity - Other.Velocity;
+            float Speed = (RelativeVelocity.x * Normal.x + RelativeVelocity.y * Normal.y);
+
+            // 겹쳐 있을 때도 충돌 처리를 강제 실행
+            if (Speed > 0 && Distance >= MinDist) return;
+
+            float Impulse = 2.0f * Speed / (Mass + Other.Mass);
+            Other.Velocity += Normal * Impulse * Mass;
+
+            // 위치 보정 추가 (공이 너무 겹치는 문제 방지)
+            float Overlap = MinDist - Distance;
+            FVector3 Correction = Normal * (Overlap / 2.0f);
+
+            Other.Location -= Correction;
+        }
+    }
 };
 
 class UBallManager {
@@ -560,7 +600,7 @@ public:
         VertexBuffer = nullptr;
 
         BallList = new UBall * [Capacity];
-        
+
 
         // Vertex Buffer 생성
         InitializeVertexBuffer();
@@ -609,7 +649,7 @@ public:
     }
 
     // 모든 공 이동
-    void UpdateBalls(UPaddle* Paddle1, UPaddle* Paddle2) {
+    void UpdateBalls(UCork* CorkA, UCork* CorkB) {
         if (bUseGravity) {
             for (int i = 0; i < BallCount; i++) {
                 float acceleration = Gravity / BallList[i]->Mass; // 중력 가속도 = Gravity / Mass
@@ -620,53 +660,8 @@ public:
         for (int i = 0; i < BallCount; i++) {
             BallList[i]->Move();
             BallList[i]->CheckWallCollision();
-            bool IsCollisionWithPaddle = Paddle1->CheckBallCollision(*BallList[i]);
-            if (IsCollisionWithPaddle) {
-                BallList[i]->Location.x = Paddle1->Location.x + BallList[i]-> Radius + Paddle1->Width / 2;  // 패들 위로 이동
-
-                float hitPosition = (BallList[i]->Location.y - Paddle1->Location.y) / Paddle1->Height;
-                float reflectionAngle = -45 + (hitPosition * 90);
-
-                float speed = sqrt(BallList[i]->Velocity.x * BallList[i]->Velocity.x + BallList[i]->Velocity.y * BallList[i]->Velocity.y);
-
-                float speed_x = -speed * sin(reflectionAngle * 3.14 / 180.0);
-
-                if (fabs(speed_x) < 0.015f) {
-                    speed_x = speed_x < 0 ? -0.015f : 0.015f;
-                }
-
-                float speed_y = speed * cos(reflectionAngle * 3.14 / 180.0);
-
-                BallList[i]->Velocity.x = speed_x;
-                BallList[i]->Velocity.y = speed_y;
-
-            }
-
-            bool IsCollisionWithPaddle2 = Paddle2->CheckBallCollision(*BallList[i]);
-            if (IsCollisionWithPaddle2) {
-                BallList[i]->Location.x = Paddle2->Location.x - BallList[i]->Radius - Paddle2->Width / 2;  // 패들 위로 이동
-                
-                // hitPosition이 y축에서 Paddle의 중심 위이면
-                float hitPosition = (BallList[i]->Location.y - Paddle2->Location.y) / Paddle2->Height;
-                float reflectionAngle = -45 + (hitPosition * 90);
-
-                float speed = sqrt(BallList[i]->Velocity.x * BallList[i]->Velocity.x + BallList[i]->Velocity.y * BallList[i]->Velocity.y);
-
-
-                float speed_x = -speed * sin(reflectionAngle * 3.14 / 180.0);
-
-                if (fabs(speed_x) < 0.015f) {
-                    speed_x = speed_x < 0 ? -0.015f : 0.015f;
-                }
-
-                float speed_y = speed * cos(reflectionAngle * 3.14 / 180.0);
-
-
-                BallList[i]->Velocity.x = speed_x;
-                BallList[i]->Velocity.y = speed_y;
-            }
-
-
+            CorkA->ResolveCollision(*BallList[i]);
+            CorkB->ResolveCollision(*BallList[i]);
         }
 
         // 공이 1개 이하라면 충돌 연산 불필요
@@ -678,6 +673,7 @@ public:
                 BallList[i]->ResolveCollision(*BallList[j]);
             }
         }
+
     }
 
     // 모든 공 렌더링
@@ -786,29 +782,30 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     ID3D11Buffer* vertexBufferVertical = renderer.CreateVertexBuffer(vertical, sizeof(vertical));
 
     //가로선, 세로선 offset
-    FVector3 offsetHorizontal(0.0f, 0.525f, 0.0f);
+    FVector3 offsetHorizontal(0.0f, 0.5f, 0.0f);
     FVector3 offsetVertical(-1.0f, 0.0f, 0.0f);
 
-    // 플레이어A, B 막대기
-    FVertexSimple playerA[36];
-    FVertexSimple playerB[36];
+    //// 플레이어A, B 막대기
+    //FVertexSimple playerA[36];
+    //FVertexSimple playerB[36];
 
-    for (UINT i = 0; i < numVerticeCube; i++)
-    {
-        playerA[i] = cube_vertices[i];
-        playerA[i].x *= 0.05f;
-        playerA[i].y *= 0.25f;
+    //for (UINT i = 0; i < numVerticeCube; i++)
+    //{
+    //    playerA[i] = cube_vertices[i];
+    //    playerA[i].x *= 0.05f;
+    //    playerA[i].y *= 0.25f;
 
-        playerB[i] = cube_vertices[i];
-        playerB[i].x *= 0.05f;
-        playerB[i].y *= 0.25f;
-    }
-    ID3D11Buffer* vertexBufferPlayerA = renderer.CreateVertexBuffer(playerA, sizeof(playerA));
-    ID3D11Buffer* vertexBufferPlayerB = renderer.CreateVertexBuffer(playerB, sizeof(playerB));
+    //    playerB[i] = cube_vertices[i];
+    //    playerB[i].x *= 0.05f;
+    //    playerB[i].y *= 0.25f;
+    //}
+
+    ID3D11Buffer* vertexBufferPlayerA = renderer.CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
+    ID3D11Buffer* vertexBufferPlayerB = renderer.CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
 
     // 플레이어1, 플레이어2 offset
-    FVector3 offsetPlayerA(-0.9f, 0.0f, 0.0f);
-    FVector3 offsetPlayerB(0.9f, 0.0f, 0.0f);
+    FVector3 offsetPlayerA(-0.875f, 0.0f, 0.0f);
+    FVector3 offsetPlayerB(0.875f, 0.0f, 0.0f);
 
     bool bIsExit = false;
 
@@ -835,9 +832,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     float moveB = 0.03f;
 
     // 플레이어 Paddle
-    UPaddle* Paddle1 = new UPaddle(offsetPlayerA, moveA, 0.05f, 0.25f);
-    UPaddle* Paddle2 = new UPaddle(offsetPlayerB, moveB, 0.05f, 0.25f);
+    //UPaddle* Paddle1 = new UPaddle(offsetPlayerA, moveA, 0.05f, 0.25f);
+    //UPaddle* Paddle2 = new UPaddle(offsetPlayerB, moveB, 0.05f, 0.25f);
 
+    UCork* CorkA = new UCork(FVector3(-0.875f, 0.0f, 0.0f), moveA, 0.07f, 0.7f);
+    UCork* CorkB = new UCork(FVector3(0.875f, 0.0f, 0.0f), moveB, 0.07f, 0.7f);
 
     // Main Loop (Quit Message가 들어오기 전까지 아래 Loop를 무한히 실행하게 됨)
     while (bIsExit == false) {
@@ -858,32 +857,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 bIsExit = true;
                 break;
             }
-
-            else if (msg.message == WM_KEYDOWN)
-            {
-                if (GetAsyncKeyState(0x57) & 0x8000 && offsetPlayerA.y + moveA < 0.35f) {
-                    offsetPlayerA.y += moveA;
-                    Paddle1->Move(moveA);
-                }
-
-                if (GetAsyncKeyState(0x53) & 0x8000 && offsetPlayerA.y - moveA > -0.35f) {
-                    offsetPlayerA.y -= moveA;
-                    Paddle1->Move(-moveA);
-                }
-
-                if (GetAsyncKeyState(VK_UP) & 0x8000 && offsetPlayerB.y + moveB < 0.35f) {
-                    offsetPlayerB.y += moveB;
-                    Paddle2->Move(moveB);
-                }
-
-                if (GetAsyncKeyState(VK_DOWN) & 0x8000 && offsetPlayerB.y - moveB > -0.35f) {
-                    offsetPlayerB.y -= moveB;
-                    Paddle2->Move(-moveB);
-                }
-            }
+        }
+        if (GetAsyncKeyState(0x57) & 0x8000 && offsetPlayerA.y + moveA < 0.405f) {
+            offsetPlayerA.y += moveA;
+            CorkA->SetLocationY(moveA);
         }
 
-        BallManager.UpdateBalls(Paddle1, Paddle2);
+        if (GetAsyncKeyState(0x53) & 0x8000 && offsetPlayerA.y - moveA > -0.405f) {
+            offsetPlayerA.y -= moveA;
+            CorkA->SetLocationY(-moveA);
+        }
+
+        if (GetAsyncKeyState(VK_UP) & 0x8000 && offsetPlayerB.y + moveB < 0.405f) {
+            offsetPlayerB.y += moveB;
+            CorkB->SetLocationY(moveB);
+        }
+
+        if (GetAsyncKeyState(VK_DOWN) & 0x8000 && offsetPlayerB.y - moveB > -0.405f) {
+            offsetPlayerB.y -= moveB;
+            CorkB->SetLocationY(-moveB);
+        }
+
+        BallManager.UpdateBalls(CorkA, CorkB);
+
 
         // 준비 작업
         renderer.Prepare();
@@ -906,12 +902,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         renderer.RenderPrimitive(vertexBufferVertical, numVerticeCube);
 
         //플레이어A 렌더링
-        renderer.UpdateConstant(offsetPlayerA, 1.0f);
-        renderer.RenderPrimitive(vertexBufferPlayerA, numVerticeCube);
+        renderer.UpdateConstant(offsetPlayerA, 0.07f);
+        renderer.RenderPrimitive(vertexBufferPlayerA, sizeof(sphere_vertices) / sizeof(FVertexSimple));
 
         //플레이어B 렌더링
-        renderer.UpdateConstant(offsetPlayerB, 1.0f);
-        renderer.RenderPrimitive(vertexBufferPlayerB, numVerticeCube);
+        renderer.UpdateConstant(offsetPlayerB, 0.07f);
+        renderer.RenderPrimitive(vertexBufferPlayerB, sizeof(sphere_vertices) / sizeof(FVertexSimple));
 
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
