@@ -106,4 +106,18 @@ void SoundManager::PlayBGM(const std::string& BGMName, float Volume = 1.0f) {
 	}
 }
 
+void SoundManager::PlaySFX(const std::string& SFXName, float Volume = 1.0f) {
+	std::unordered_map<std::string, FMOD::Sound*>::iterator iter = SoundMap.find(SFXName);
+	if (SoundMap.end() == iter) {
+		std::cerr << "[Error] 효과음을 찾을 수 없음: " << SFXName << std::endl;
+		return;
+	}
+
+	FMOD::Channel* Channel = nullptr;
+	if (FMOD_OK == FMODSystem->playSound(iter->second, nullptr, false, &Channel)) {
+		Channel->setVolume(Volume);
+		std::cout << "[Log] 효과음 재생: " << SFXName << std::endl;
+	}
+}
+
 
