@@ -23,6 +23,59 @@ struct FVertexSimple {
     float r, g, b, a; // Color
 };
 
+// 벽에 사용할 정육면체
+FVertexSimple cube_vertices[] =
+{
+    // Front face (Z+)
+    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+
+    // Back face (Z-)
+    { -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+
+    // Left face (X-)
+    { -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+
+    // Right face (X+)
+    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+
+    // Top face (Y+)
+    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+
+    // Bottom face (Y-)
+    { -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+};
+
+
 // Structure for a 3D vector
 struct FVector3 {
     float x, y, z;
@@ -363,6 +416,7 @@ public:
     }
 };
 
+
 class UBall {
 public:
     FVector3 Location;  // 공의 위치
@@ -394,15 +448,17 @@ public:
         if (Location.x < leftBorder) {
             Location.x = leftBorder;  // 위치 보정
             Velocity.x *= -1.0f;      // 반사
-        } else if (Location.x > rightBorder) {
+        }
+        else if (Location.x > rightBorder) {
             Location.x = rightBorder;
             Velocity.x *= -1.0f;
         }
 
-        if (Location.y > topBorder) { 
+        if (Location.y > topBorder) {
             Location.y = topBorder;
             Velocity.y *= -1.0f;
-        } else if (Location.y < bottomBorder) { 
+        }
+        else if (Location.y < bottomBorder) {
             Location.y = bottomBorder;
 
             if (bUseGravity) {
@@ -410,7 +466,8 @@ public:
                 if (fabs(Velocity.y) < 0.01f) { // 매우 작은 값이면 멈춤
                     Velocity.y = 0.0f;
                 }
-            } else {
+            }
+            else {
                 Velocity.y *= -1.0f; // 중력이 없을 때는 완전 반사
             }
         }
@@ -445,7 +502,7 @@ public:
     }
 
     void Render(URenderer* renderer, ID3D11Buffer* vertexBuffer) {
-        if (nullptr ==  vertexBuffer) 
+        if (nullptr == vertexBuffer)
             return;
 
         renderer->UpdateConstant(Location, Radius);
@@ -456,6 +513,33 @@ public:
     float RandomFloat(float Min, float Max) {
         return Min + static_cast<float>(rand()) / static_cast<float>(RAND_MAX / (Max - Min));
     }
+};
+
+
+class UPaddle {
+public:
+    FVector3 Location;
+    FVector3 Velocity;
+    float Width;
+    float Height;
+
+    UPaddle(FVector3 Location, FVector3 Velocity, float Width, float Height) : Location(Location), Velocity(Velocity), Width(Width), Height(Height) {}
+
+    void Move(float delta) {
+        Location.y += delta;
+    }
+
+    bool CheckBallCollision(UBall& Ball) {
+        float closestX = (Ball.Location.x < Location.x) ? Location.x : (Ball.Location.x > Location.x + Width) ? (Location.x + Width) : Ball.Location.x;
+        float closestY = (Ball.Location.y < Location.y) ? Location.y : (Ball.Location.y > Location.y + Height) ? (Location.y + Height) : Ball.Location.y;
+
+        float distanceX = Ball.Location.x - closestX;
+        float distanceY = Ball.Location.y - closestY;
+
+        return (distanceX * distanceX + distanceY * distanceY) < (Ball.Radius * Ball.Radius);
+    }
+
+
 };
 
 class UBallManager {
@@ -475,6 +559,7 @@ public:
         VertexBuffer = nullptr;
 
         BallList = new UBall * [Capacity];
+        
 
         // Vertex Buffer 생성
         InitializeVertexBuffer();
@@ -523,9 +608,8 @@ public:
     }
 
     // 모든 공 이동
-    void UpdateBalls() {
+    void UpdateBalls(UPaddle* Paddle1, UPaddle* Paddle2) {
         if (bUseGravity) {
-
             for (int i = 0; i < BallCount; i++) {
                 float acceleration = Gravity / BallList[i]->Mass; // 중력 가속도 = Gravity / Mass
                 BallList[i]->Velocity.y += acceleration; // 질량에 비례한 중력 가속도 적용
@@ -535,6 +619,27 @@ public:
         for (int i = 0; i < BallCount; i++) {
             BallList[i]->Move();
             BallList[i]->CheckWallCollision();
+            bool IsCollisionWithPaddle = Paddle1->CheckBallCollision(*BallList[i]);
+            if (IsCollisionWithPaddle) {
+                float hitPosition = (BallList[i]->Location.x - Paddle1->Location.x) / Paddle1->Width;
+                float reflectionAngle = -45 + (hitPosition * 90);
+
+                float speed = sqrt(BallList[i]->Velocity.x * BallList[i]->Velocity.x + BallList[i]->Velocity.y * BallList[i]->Velocity.y);
+
+                BallList[i]->Velocity.x = speed * cos(reflectionAngle * 3.14 / 180.0) + Paddle1->Velocity.x * 0.5;
+                BallList[i]->Velocity.y = -speed * sin(reflectionAngle * 3.14 / 180.0);
+            }
+
+            bool IsCollisionWithPaddle2 = Paddle2->CheckBallCollision(*BallList[i]);
+            if (IsCollisionWithPaddle2) {
+                float hitPosition = (BallList[i]->Location.x - Paddle2->Location.x) / Paddle2->Width;
+                float reflectionAngle = -45 + (hitPosition * 90);
+
+                float speed = sqrt(BallList[i]->Velocity.x * BallList[i]->Velocity.x + BallList[i]->Velocity.y * BallList[i]->Velocity.y);
+
+                BallList[i]->Velocity.x = speed * cos(reflectionAngle * 3.14 / 180.0) + Paddle1->Velocity.x * 0.5;
+                BallList[i]->Velocity.y = -speed * sin(reflectionAngle * 3.14 / 180.0);
+            }
         }
 
         // 공이 1개 이하라면 충돌 연산 불필요
@@ -579,6 +684,8 @@ public:
         ReleaseVertexBuffer();
     }
 };
+
+
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -630,6 +737,52 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     UBallManager BallManager(&renderer);
     BallManager.AddBall();
 
+    // 가로선 세로선 생성
+    UINT numVerticeCube = sizeof(cube_vertices) / sizeof(FVertexSimple);
+    FVertexSimple horizontal[36];
+    FVertexSimple vertical[36];
+
+    for (UINT i = 0; i < numVerticeCube; i++)
+    {
+        //가로선 스케일링
+        horizontal[i] = cube_vertices[i];
+        horizontal[i].x *= 2.0f;
+        horizontal[i].y *= 0.05f;
+
+        //세로선 스케일링
+        vertical[i] = cube_vertices[i];
+        vertical[i].x *= 0.1f;
+        vertical[i].y *= 1.0f;
+
+    }
+    ID3D11Buffer* vertexBufferHorizontal = renderer.CreateVertexBuffer(horizontal, sizeof(horizontal));
+    ID3D11Buffer* vertexBufferVertical = renderer.CreateVertexBuffer(vertical, sizeof(vertical));
+
+    //가로선, 세로선 offset
+    FVector3 offsetHorizontal(0.0f, 0.5f, 0.0f);
+    FVector3 offsetVertical(-1.0f, 0.0f, 0.0f);
+
+    // 플레이어A, B 막대기
+    FVertexSimple playerA[36];
+    FVertexSimple playerB[36];
+
+    for (UINT i = 0; i < numVerticeCube; i++)
+    {
+        playerA[i] = cube_vertices[i];
+        playerA[i].x *= 0.05f;
+        playerA[i].y *= 0.25f;
+
+        playerB[i] = cube_vertices[i];
+        playerB[i].x *= 0.05f;
+        playerB[i].y *= 0.25f;
+    }
+    ID3D11Buffer* vertexBufferPlayerA = renderer.CreateVertexBuffer(playerA, sizeof(playerA));
+    ID3D11Buffer* vertexBufferPlayerB = renderer.CreateVertexBuffer(playerB, sizeof(playerB));
+
+    // 플레이어1, 플레이어2 offset
+    FVector3 offsetPlayerA(-0.8f, 0.0f, 0.0f);
+    FVector3 offsetPlayerB(0.8f, 0.0f, 0.0f);
+
     bool bIsExit = false;
 
     // ImGui를 생성합니다.
@@ -650,6 +803,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     LARGE_INTEGER startTime, endTime;
     double elapsedTime = 0.0;
 
+    //플레이어A, B 이동속도
+    float moveA = 0.01f;
+    float moveB = 0.01f;
+
+    // 플레이어 Paddle
+    UPaddle* Paddle1 = new UPaddle(offsetPlayerA, moveA, 0.25f, 0.05f);
+    UPaddle* Paddle2 = new UPaddle(offsetPlayerB, moveB, 0.25f, 0.05f);
+
+
     // Main Loop (Quit Message가 들어오기 전까지 아래 Loop를 무한히 실행하게 됨)
     while (bIsExit == false) {
         // 루프 시작 시간 기록
@@ -669,78 +831,112 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 bIsExit = true;
                 break;
             }
+            else if (msg.message == WM_KEYDOWN)
+            {
+                if (GetAsyncKeyState(0x57) & 0x8000)
+                    offsetPlayerA.y += moveA;
+                if (GetAsyncKeyState(0x53) & 0x8000)
+                    offsetPlayerA.y -= moveA;
+                if (GetAsyncKeyState(VK_UP) & 0x8000)
+                    offsetPlayerB.y += moveB;
+                if (GetAsyncKeyState(VK_DOWN) & 0x8000)
+                    offsetPlayerB.y -= moveB;
+            }
         }
 
-            BallManager.UpdateBalls();
+        BallManager.UpdateBalls(Paddle1, Paddle2);
 
 
-            // 준비 작업
-            renderer.Prepare();
-            renderer.PrepareShader();
+        // 준비 작업
+        renderer.Prepare();
+        renderer.PrepareShader();
 
-            BallManager.RenderBalls();
+        BallManager.RenderBalls();
 
-            ImGui_ImplDX11_NewFrame();
-            ImGui_ImplWin32_NewFrame();
-            ImGui::NewFrame();
+        //가로벽 렌더링
+        renderer.UpdateConstant(offsetHorizontal, 1.0f);
+        renderer.RenderPrimitive(vertexBufferHorizontal, numVerticeCube);
+        offsetHorizontal.y *= -1.0f; //offset 변경
+        renderer.UpdateConstant(offsetHorizontal, 1.0f);
+        renderer.RenderPrimitive(vertexBufferHorizontal, numVerticeCube);
 
-            // 이후 ImGui UI 컨트롤 추가는 ImGui::NewFrame()과 ImGui::Render() 사이인 여기에 위치합니다.
-            ImGui::Begin("Jungle Property Window");
+        //세로벽 렌더링
+        renderer.UpdateConstant(offsetVertical, 1.0f);
+        renderer.RenderPrimitive(vertexBufferVertical, numVerticeCube);
+        offsetVertical.x *= -1.0f;  //offset 변경
+        renderer.UpdateConstant(offsetVertical, 1.0f);
+        renderer.RenderPrimitive(vertexBufferVertical, numVerticeCube);
 
-            ImGui::Text("Hello Jungle World!");
+        //플레이어A 렌더링
+        renderer.UpdateConstant(offsetPlayerA, 1.0f);
+        renderer.RenderPrimitive(vertexBufferPlayerA, numVerticeCube);
 
-            // 중력 체크박스 추가
-            ImGui::Checkbox("Use Gravity", &bUseGravity);
+        //플레이어B 렌더링
+        renderer.UpdateConstant(offsetPlayerB, 1.0f);
+        renderer.RenderPrimitive(vertexBufferPlayerB, numVerticeCube);
 
-            static int ballCountInput = BallManager.BallCount;  // 현재 공 개수 저장
+        ImGui_ImplDX11_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
 
-            // 공 개수 표시 및 수동 입력 가능
-            if (ImGui::InputInt("Number Of Balls", &ballCountInput)) {
-                // 공 개수를 입력한 값에 맞게 조정
-                if (ballCountInput < 0) ballCountInput = 0; // 음수 방지
+        // 이후 ImGui UI 컨트롤 추가는 ImGui::NewFrame()과 ImGui::Render() 사이인 여기에 위치합니다.
+        ImGui::Begin("Jungle Property Window");
 
-                if (ballCountInput > BallManager.BallCount) {
-                    // 현재 개수보다 많으면 추가
-                    while (BallManager.BallCount < ballCountInput) {
-                        BallManager.AddBall();
-                    }
-                } else if (ballCountInput < BallManager.BallCount) {
-                    // 현재 개수보다 적으면 삭제
-                    while (BallManager.BallCount > ballCountInput) {
-                        BallManager.RemoveBall();
-                    }
+        ImGui::Text("Hello Jungle World!");
+
+        // 중력 체크박스 추가
+        ImGui::Checkbox("Use Gravity", &bUseGravity);
+
+        static int ballCountInput = BallManager.BallCount;  // 현재 공 개수 저장
+
+        // 공 개수 표시 및 수동 입력 가능
+        if (ImGui::InputInt("Number Of Balls", &ballCountInput)) {
+            // 공 개수를 입력한 값에 맞게 조정
+            if (ballCountInput < 0) ballCountInput = 0; // 음수 방지
+
+            if (ballCountInput > BallManager.BallCount) {
+                // 현재 개수보다 많으면 추가
+                while (BallManager.BallCount < ballCountInput) {
+                    BallManager.AddBall();
                 }
             }
-
-            ImGui::End();
-
-            ImGui::Render();
-            ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
-            // 현재 화면에 보여지는 버퍼와 그리기 작업을 위한 버퍼를 서로 교환합니다.
-            renderer.SwapBuffer();
-
-            do {
-                Sleep(0);
-
-                // 루프 종료 시간 기록
-                QueryPerformanceCounter(&endTime);
-
-                // 한 프레임이 소요된 시간 계산 (밀리초 단위로 변환)
-                elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
-
-            } while (elapsedTime < targetFrameTime);
+            else if (ballCountInput < BallManager.BallCount) {
+                // 현재 개수보다 적으면 삭제
+                while (BallManager.BallCount > ballCountInput) {
+                    BallManager.RemoveBall();
+                }
+            }
         }
 
-        // ImGui 소멸
-        ImGui_ImplDX11_Shutdown();
-        ImGui_ImplWin32_Shutdown();
-        ImGui::DestroyContext();
+        ImGui::End();
 
-        // ReleaseShader() 직전에 소멸 함수를 추가합니다.
-        renderer.ReleaseConstantBuffer();
-        renderer.ReleaseShader();
-        renderer.Release();
+        ImGui::Render();
+        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-        return 0;
+        // 현재 화면에 보여지는 버퍼와 그리기 작업을 위한 버퍼를 서로 교환합니다.
+        renderer.SwapBuffer();
+
+        do {
+            Sleep(0);
+
+            // 루프 종료 시간 기록
+            QueryPerformanceCounter(&endTime);
+
+            // 한 프레임이 소요된 시간 계산 (밀리초 단위로 변환)
+            elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
+
+        } while (elapsedTime < targetFrameTime);
+    }
+
+    // ImGui 소멸
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+
+    // ReleaseShader() 직전에 소멸 함수를 추가합니다.
+    renderer.ReleaseConstantBuffer();
+    renderer.ReleaseShader();
+    renderer.Release();
+
+    return 0;
 }
