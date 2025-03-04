@@ -74,7 +74,7 @@ std::string SoundManager::GetExecutablePath() {
 	return resourcePath;
 }
 
-void SoundManager::LoadSound(const std::string& SoundName, const std::string& FilePath, bool Loop = false) {
+void SoundManager::LoadSound(const std::string& SoundName, const std::string& FilePath, bool Loop) {
 	if (SoundMap.find(SoundName) != SoundMap.end()) {
 		return; // 이미 로드된 사운드
 	}
@@ -93,7 +93,7 @@ void SoundManager::LoadSound(const std::string& SoundName, const std::string& Fi
 	std::cout << "[Log] 사운드 로드 완료: " << SoundName << std::endl;
 }
 
-void SoundManager::PlayBGM(const std::string& BGMName, float Volume = 1.0f) {
+void SoundManager::PlayBGM(const std::string& BGMName, float Volume) {
 	std::unordered_map<std::string, FMOD::Sound*>::iterator iter = SoundMap.find(BGMName);
 	if (SoundMap.end() == iter) {
 		std::cerr << "[Error] BGM을 찾을 수 없음: " << BGMName << std::endl;
@@ -120,7 +120,7 @@ void SoundManager::StopBGM() {
 	}
 }
 
-void SoundManager::PlaySFX(const std::string& SFXName, float Volume = 1.0f) {
+void SoundManager::PlaySFX(const std::string& SFXName, float Volume) {
 	std::unordered_map<std::string, FMOD::Sound*>::iterator iter = SoundMap.find(SFXName);
 	if (SoundMap.end() == iter) {
 		std::cerr << "[Error] 효과음을 찾을 수 없음: " << SFXName << std::endl;
