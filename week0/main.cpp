@@ -14,7 +14,7 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "imGui/imgui_impl_win32.h"
 
-#include <fmod.hpp>
+#include "SoundManager.h"
 
 bool bUseGravity = false; // 중력 적용 여부 (기본 OFF)
 float Gravity = -0.001f; // 중력 가속도 값 (음수 값: 아래 방향)
@@ -655,6 +655,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     LARGE_INTEGER startTime, endTime;
     double elapsedTime = 0.0;
 
+    /* SoundManager Init */
+    SoundManager* SoundMgr = SoundManager::GetInstance();
+
+    if (!SoundMgr->Initialize()) {
+        return -1;
+    }
+
+    SoundMgr->LoadSound("Hit", "hit.mp3");
+
     // Main Loop (Quit Message가 들어오기 전까지 아래 Loop를 무한히 실행하게 됨)
     while (bIsExit == false) {
         // 루프 시작 시간 기록
@@ -674,6 +683,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 bIsExit = true;
                 break;
             }
+        }
+
+        // 스페이스 바를 눌렀을 때 효과음 재생
+        if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
+            SoundMgr->PlaySFX("Hit");
+            Sleep(100);  // 중복 입력 방지 (0.1초 딜레이)
         }
 
             BallManager.UpdateBalls();
