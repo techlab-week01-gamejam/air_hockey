@@ -212,6 +212,9 @@ public:
     ID3D11ShaderResourceView* BallTexture = nullptr;
     ID3D11ShaderResourceView* WallTexture = nullptr;
     ID3D11ShaderResourceView* HoleTexture = nullptr;
+    ID3D11ShaderResourceView* NormalItemTexture = nullptr;
+    ID3D11ShaderResourceView* BuffItemTexture = nullptr;
+    ID3D11ShaderResourceView* DeBuffItemTexture = nullptr;
 
 public:
     // 렌더러 초기화 함수
@@ -240,6 +243,9 @@ public:
         TextureLoader::Get().LoadTextureFromFile("./textures/ball.png", &BallTexture, "ball"); // 볼
         TextureLoader::Get().LoadTextureFromFile("./textures/wall.jpg", &WallTexture, "wall"); // 벽
         TextureLoader::Get().LoadTextureFromFile("./textures/hole.jpg", &HoleTexture, "hole"); // 홀
+        TextureLoader::Get().LoadTextureFromFile("./textures/normal-item.png", &NormalItemTexture, "normalItem"); // 중립 아이템
+        TextureLoader::Get().LoadTextureFromFile("./textures/buff-item.jpg", &BuffItemTexture, "buffItem"); // 버프 아이템
+        TextureLoader::Get().LoadTextureFromFile("./textures/debuff-item.jpg", &DeBuffItemTexture, "debuffItem"); // 디버프 아이템
     }
 
     void CreateSamplerState()
@@ -687,6 +693,13 @@ public:
     {
         if (nullptr == vertexBuffer)
             return;
+
+        if (ItemType == EItem::TwoBalls) {
+            renderer->DeviceContext->PSSetShaderResources(0, 1, &renderer->NormalItemTexture);
+        }
+        else if (ItemType == EItem::Slow || ItemType == EItem::Stop) {
+            renderer->DeviceContext->PSSetShaderResources(0, 1, &renderer->DeBuffItemTexture);
+        }
 
         renderer->UpdateConstant(Location, 0.04f);
         renderer->RenderPrimitive(vertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
