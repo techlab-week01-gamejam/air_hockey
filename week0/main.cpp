@@ -666,6 +666,12 @@ public:
             while (bMultipleBalls && newItem == EItem::TwoBalls) {
                 newItem = GetRandomItem();
             }
+
+            // 일시적
+            if (bMultipleBalls) {
+                return;
+            }
+
             ItemList[ItemCount] = new UItem(FVector3(RandomFloat(-0.9f, 0.9f), RandomFloat(-0.4f, 0.4f), 0.0f), EItem::TwoBalls);
             ItemCount++;
         }
@@ -800,12 +806,12 @@ public:
             CorkA->ResolveCollision(*BallList[i]);
             CorkB->ResolveCollision(*BallList[i]);
 
-            for (int i = 0; i < ItemManager->ItemCount; i++) {
-                if (ItemManager->ItemList[i]->IsCollisionWithItem(*BallList[i])) {
-                    if (ItemManager->ItemList[i]->ItemType == EItem::TwoBalls) {
-                        AddBall(ItemManager->ItemList[i]->Location);
+            for (int j = 0; j < ItemManager->ItemCount; j++) {
+                if (ItemManager->ItemList[j]->IsCollisionWithItem(*BallList[i])) {
+                    if (ItemManager->ItemList[j]->ItemType == EItem::TwoBalls) {
+                        AddBall(ItemManager->ItemList[j]->Location);
                     }
-                    ItemManager->RemoveItem(ItemManager->ItemList[i]);
+                    ItemManager->RemoveItem(ItemManager->ItemList[j]);
                 }
             }
         }
@@ -883,7 +889,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 DWORD WINAPI TimerThread(LPVOID lpParam) {
     UItemManager* ItemManager = static_cast<UItemManager*>(lpParam);
     while (true) {
-        if (ItemManager->ItemCount == 1) {
+        if (ItemManager->ItemCount == 2) {
             Sleep(10000);
         }
         else {
@@ -1147,7 +1153,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
-
+        
         // 이후 ImGui UI 컨트롤 추가는 ImGui::NewFrame()과 ImGui::Render() 사이인 여기에 위치합니다.
         ImGui::Begin("Jungle Property Window");
 
