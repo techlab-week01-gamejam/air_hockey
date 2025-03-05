@@ -540,31 +540,6 @@ public:
     }
 };
 
-
-class UPaddle {
-public:
-    FVector3 Location;
-    FVector3 Velocity;
-    float Width;
-    float Height;
-
-    UPaddle(FVector3 Location, FVector3 Velocity, float Width, float Height) : Location(Location), Velocity(Velocity), Width(Width), Height(Height) {}
-
-    void Move(float delta) {
-        Location.y += delta;
-    }
-
-    bool CheckBallCollision(UBall& Ball) {
-        float closestX = (Ball.Location.x < Location.x - Width / 2) ? Location.x - Width / 2 : (Ball.Location.x > Location.x + Width / 2) ? (Location.x + Width / 2) : Ball.Location.x;
-        float closestY = (Ball.Location.y < Location.y - Height / 2) ? Location.y - Height / 2 : (Ball.Location.y > Location.y + Height / 2) ? (Location.y + Height / 2) : Ball.Location.y;
-
-        float distanceX = Ball.Location.x - closestX;
-        float distanceY = Ball.Location.y - closestY;
-
-        return (distanceX * distanceX + distanceY * distanceY) < (Ball.Radius * Ball.Radius);
-    }
-};
-
 class UCork {
 public:
     FVector3 Location;  // 공의 위치
@@ -821,21 +796,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     FVector3 offsetHorizontal(0.0f, 0.5f, 0.0f);
     FVector3 offsetVertical(-1.0f, 0.0f, 0.0f);
 
-    //// 플레이어A, B 막대기
-    //FVertexSimple playerA[36];
-    //FVertexSimple playerB[36];
-
-    //for (UINT i = 0; i < numVerticeCube; i++)
-    //{
-    //    playerA[i] = cube_vertices[i];
-    //    playerA[i].x *= 0.05f;
-    //    playerA[i].y *= 0.25f;
-
-    //    playerB[i] = cube_vertices[i];
-    //    playerB[i].x *= 0.05f;
-    //    playerB[i].y *= 0.25f;
-    //}
-
     ID3D11Buffer* vertexBufferPlayerA = renderer.CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
     ID3D11Buffer* vertexBufferPlayerB = renderer.CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
 
@@ -867,10 +827,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     float moveA = 0.03f;
     float moveB = 0.03f;
 
-    // 플레이어 Paddle
-    //UPaddle* Paddle1 = new UPaddle(offsetPlayerA, moveA, 0.05f, 0.25f);
-    //UPaddle* Paddle2 = new UPaddle(offsetPlayerB, moveB, 0.05f, 0.25f);
-
+    // 플레이어 Cork
     UCork* CorkA = new UCork(FVector3(-0.875f, 0.0f, 0.0f), 0.07f, 35.0f);
     UCork* CorkB = new UCork(FVector3(0.875f, 0.0f, 0.0f), 0.07f, 35.0f);
 
