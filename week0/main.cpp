@@ -2,13 +2,14 @@
 #define STB_IMAGE_IMPLEMENTATION
 
 #include <windows.h>
+#include <ctime>
 
-// D3D »ç¿ë¿¡ ÇÊ¿äÇÑ ¶óÀÌºê·¯¸®µéÀ» ¸µÅ©ÇÕ´Ï´Ù.
+// D3D ì‚¬ìš©ì— í•„ìš”í•œ ë¼ì´ë¸ŒëŸ¬ë¦¬ë“¤ì„ ë§í¬í•©ë‹ˆë‹¤.
 #pragma comment(lib, "user32")
 #pragma comment(lib, "d3d11")
 #pragma comment(lib, "d3dcompiler")
 
-// D3D »ç¿ë¿¡ ÇÊ¿äÇÑ Çì´õÆÄÀÏµéÀ» Æ÷ÇÔÇÕ´Ï´Ù.
+// D3D ì‚¬ìš©ì— í•„ìš”í•œ í—¤ë”íŒŒì¼ë“¤ì„ í¬í•¨í•©ë‹ˆë‹¤.
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
@@ -17,10 +18,15 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "imGui/imgui_impl_win32.h"
 
-#include "UI/UIManager.h"
 
-bool bUseGravity = false; // Áß·Â Àû¿ë ¿©ºÎ (±âº» OFF)
-float Gravity = -0.001f; // Áß·Â °¡¼Óµµ °ª (À½¼ö °ª: ¾Æ·¡ ¹æÇâ)
+#include "UI/UIManager.h"
+bool bUseGravity = false; // ì¤‘ë ¥ ì ìš© ì—¬ë¶€ (ê¸°ë³¸ OFF)
+float Gravity = -0.001f; // ì¤‘ë ¥ ê°€ì†ë„ ê°’ (ìŒìˆ˜ ê°’: ì•„ë˜ ë°©í–¥)
+float leftHole = 0.2f;
+float rightHole = 0.2f;
+int scoreA = 0;
+int scoreB = 0;
+char isGoal;
 
 // 1. Define the triangle vertices
 struct FVertexSimple {
@@ -28,32 +34,85 @@ struct FVertexSimple {
     float r, g, b, a; // Color
 };
 
+// ë²½ì— ì‚¬ìš©í•  ì •ìœ¡ë©´ì²´
+FVertexSimple cube_vertices[] =
+{
+    // Front face (Z+)
+    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+
+    // Back face (Z-)
+    { -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+
+    // Left face (X-)
+    { -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+
+    // Right face (X+)
+    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+
+    // Top face (Y+)
+    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+
+    // Bottom face (Y-)
+    { -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+};
+
+
 // Structure for a 3D vector
 struct FVector3 {
     float x, y, z;
     FVector3(float _x = 0, float _y = 0, float _z = 0) : x(_x), y(_y), z(_z) {}
 
-    // º¤ÅÍ µ¡¼À ¿¬»êÀÚ
+    // ë²¡í„° ë§ì…ˆ ì—°ì‚°ì
     FVector3 operator+(const FVector3& Other) const {
         return FVector3(x + Other.x, y + Other.y, z + Other.z);
     }
 
-    // º¤ÅÍ »¬¼À ¿¬»êÀÚ
+    // ë²¡í„° ëº„ì…ˆ ì—°ì‚°ì
     FVector3 operator-(const FVector3& Other) const {
         return FVector3(x - Other.x, y - Other.y, z - Other.z);
     }
 
-    // º¤ÅÍ ½ºÄ®¶ó °ö ¿¬»êÀÚ (¿À¸¥ÂÊ ½ºÄ®¶ó °ö)
+    // ë²¡í„° ìŠ¤ì¹¼ë¼ ê³± ì—°ì‚°ì (ì˜¤ë¥¸ìª½ ìŠ¤ì¹¼ë¼ ê³±)
     FVector3 operator*(float Scalar) const {
         return FVector3(x * Scalar, y * Scalar, z * Scalar);
     }
 
-    // º¤ÅÍ ½ºÄ®¶ó ³ª´©±â ¿¬»êÀÚ
+    // ë²¡í„° ìŠ¤ì¹¼ë¼ ë‚˜ëˆ„ê¸° ì—°ì‚°ì
     FVector3 operator/(float Scalar) const {
         return FVector3(x / Scalar, y / Scalar, z / Scalar);
     }
 
-    // º¤ÅÍ µ¡¼À ÈÄ ´ëÀÔ ¿¬»êÀÚ
+    // ë²¡í„° ë§ì…ˆ í›„ ëŒ€ì… ì—°ì‚°ì
     FVector3& operator+=(const FVector3& Other) {
         x += Other.x;
         y += Other.y;
@@ -61,7 +120,7 @@ struct FVector3 {
         return *this;
     }
 
-    // º¤ÅÍ »¬¼À ÈÄ ´ëÀÔ ¿¬»êÀÚ
+    // ë²¡í„° ëº„ì…ˆ í›„ ëŒ€ì… ì—°ì‚°ì
     FVector3& operator-=(const FVector3& Other) {
         x -= Other.x;
         y -= Other.y;
@@ -69,7 +128,7 @@ struct FVector3 {
         return *this;
     }
 
-    // º¤ÅÍ ½ºÄ®¶ó °ö ÈÄ ´ëÀÔ ¿¬»êÀÚ
+    // ë²¡í„° ìŠ¤ì¹¼ë¼ ê³± í›„ ëŒ€ì… ì—°ì‚°ì
     FVector3& operator*=(float Scalar) {
         x *= Scalar;
         y *= Scalar;
@@ -77,12 +136,29 @@ struct FVector3 {
         return *this;
     }
 
-    // º¤ÅÍ ½ºÄ®¶ó ³ª´©±â ÈÄ ´ëÀÔ ¿¬»êÀÚ
+    // ë²¡í„° ìŠ¤ì¹¼ë¼ ë‚˜ëˆ„ê¸° í›„ ëŒ€ì… ì—°ì‚°ì
     FVector3& operator/=(float Scalar) {
         x /= Scalar;
         y /= Scalar;
         z /= Scalar;
         return *this;
+    }
+
+    float Length() const {
+        return sqrtf(x * x + y * y + z * z);
+    }
+    float LengthSquared() const {
+        return (x * x + y * y + z * z);
+    }
+    FVector3 Normalized() const {
+        float length = Length();
+        if (length == 0) {
+            return FVector3(0, 0, 0);
+        }
+        return FVector3(x / length, y / length, z / length);
+    }
+    float Dot(const FVector3& Other) const {
+        return x * Other.x + y * Other.y + z * Other.z;
     }
 };
 
@@ -90,19 +166,19 @@ struct FVector3 {
 
 class URenderer {
 public:
-    // Direct3D 11 ÀåÄ¡(Device)¿Í ÀåÄ¡ ÄÁÅØ½ºÆ®(Device Context) ¹× ½º¿Ò Ã¼ÀÎ(Swap Chain)À» °ü¸®ÇÏ±â À§ÇÑ Æ÷ÀÎÅÍµé
-    ID3D11Device* Device = nullptr; // GPU¿Í Åë½ÅÇÏ±â À§ÇÑ Direct3D ÀåÄ¡
-    ID3D11DeviceContext* DeviceContext = nullptr; // GPU ¸í·É ½ÇÇàÀ» ´ã´çÇÏ´Â ÄÁÅØ½ºÆ®
-    IDXGISwapChain* SwapChain = nullptr; // ÇÁ·¹ÀÓ ¹öÆÛ¸¦ ±³Ã¼ÇÏ´Â µ¥ »ç¿ëµÇ´Â ½º¿Ò Ã¼ÀÎ
+    // Direct3D 11 ì¥ì¹˜(Device)ì™€ ì¥ì¹˜ ì»¨í…ìŠ¤íŠ¸(Device Context) ë° ìŠ¤ì™‘ ì²´ì¸(Swap Chain)ì„ ê´€ë¦¬í•˜ê¸° ìœ„í•œ í¬ì¸í„°ë“¤
+    ID3D11Device* Device = nullptr; // GPUì™€ í†µì‹ í•˜ê¸° ìœ„í•œ Direct3D ì¥ì¹˜
+    ID3D11DeviceContext* DeviceContext = nullptr; // GPU ëª…ë ¹ ì‹¤í–‰ì„ ë‹´ë‹¹í•˜ëŠ” ì»¨í…ìŠ¤íŠ¸
+    IDXGISwapChain* SwapChain = nullptr; // í”„ë ˆì„ ë²„í¼ë¥¼ êµì²´í•˜ëŠ” ë° ì‚¬ìš©ë˜ëŠ” ìŠ¤ì™‘ ì²´ì¸
 
-    // ·»´õ¸µ¿¡ ÇÊ¿äÇÑ ¸®¼Ò½º ¹× »óÅÂ¸¦ °ü¸®ÇÏ±â À§ÇÑ º¯¼öµé
-    ID3D11Texture2D* FrameBuffer = nullptr; // È­¸é Ãâ·Â¿ë ÅØ½ºÃ³
-    ID3D11RenderTargetView* FrameBufferRTV = nullptr; // ÅØ½ºÃ³¸¦ ·»´õ Å¸°ÙÀ¸·Î »ç¿ëÇÏ´Â ºä
-    ID3D11RasterizerState* RasterizerState = nullptr; // ·¡½ºÅÍ¶óÀÌÀú »óÅÂ(ÄÃ¸µ, Ã¤¿ì±â ¸ğµå µî Á¤ÀÇ)
-    ID3D11Buffer* ConstantBuffer = nullptr; // ½¦ÀÌ´õ¿¡ µ¥ÀÌÅÍ¸¦ Àü´ŞÇÏ±â À§ÇÑ »ó¼ö ¹öÆÛ
+    // ë Œë”ë§ì— í•„ìš”í•œ ë¦¬ì†ŒìŠ¤ ë° ìƒíƒœë¥¼ ê´€ë¦¬í•˜ê¸° ìœ„í•œ ë³€ìˆ˜ë“¤
+    ID3D11Texture2D* FrameBuffer = nullptr; // í™”ë©´ ì¶œë ¥ìš© í…ìŠ¤ì²˜
+    ID3D11RenderTargetView* FrameBufferRTV = nullptr; // í…ìŠ¤ì²˜ë¥¼ ë Œë” íƒ€ê²Ÿìœ¼ë¡œ ì‚¬ìš©í•˜ëŠ” ë·°
+    ID3D11RasterizerState* RasterizerState = nullptr; // ë˜ìŠ¤í„°ë¼ì´ì € ìƒíƒœ(ì»¬ë§, ì±„ìš°ê¸° ëª¨ë“œ ë“± ì •ì˜)
+    ID3D11Buffer* ConstantBuffer = nullptr; // ì‰ì´ë”ì— ë°ì´í„°ë¥¼ ì „ë‹¬í•˜ê¸° ìœ„í•œ ìƒìˆ˜ ë²„í¼
 
-    FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f }; // È­¸éÀ» ÃÊ±âÈ­(clear)ÇÒ ¶§ »ç¿ëÇÒ »ö»ó (RGBA)
-    D3D11_VIEWPORT ViewportInfo; // ·»´õ¸µ ¿µ¿ªÀ» Á¤ÀÇÇÏ´Â ºäÆ÷Æ® Á¤º¸
+    FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f }; // í™”ë©´ì„ ì´ˆê¸°í™”(clear)í•  ë•Œ ì‚¬ìš©í•  ìƒ‰ìƒ (RGBA)
+    D3D11_VIEWPORT ViewportInfo; // ë Œë”ë§ ì˜ì—­ì„ ì •ì˜í•˜ëŠ” ë·°í¬íŠ¸ ì •ë³´
 
     ID3D11VertexShader* SimpleVertexShader;
     ID3D11PixelShader* SimplePixelShader;
@@ -111,54 +187,54 @@ public:
 
 
 public:
-    // ·»´õ·¯ ÃÊ±âÈ­ ÇÔ¼ö
+    // ë Œë”ëŸ¬ ì´ˆê¸°í™” í•¨ìˆ˜
     void Create(HWND hWindow) {
-        // Direct3D ÀåÄ¡ ¹× ½º¿Ò Ã¼ÀÎ »ı¼º
+        // Direct3D ì¥ì¹˜ ë° ìŠ¤ì™‘ ì²´ì¸ ìƒì„±
         CreateDeviceAndSwapChain(hWindow);
 
-        // ÇÁ·¹ÀÓ ¹öÆÛ »ı¼º
+        // í”„ë ˆì„ ë²„í¼ ìƒì„±
         CreateFrameBuffer();
 
-        // ·¡½ºÅÍ¶óÀÌÀú »óÅÂ »ı¼º
+        // ë˜ìŠ¤í„°ë¼ì´ì € ìƒíƒœ ìƒì„±
         CreateRasterizerState();
 
-        // ±íÀÌ ½ºÅÙ½Ç ¹öÆÛ ¹× ºí·»µå »óÅÂ´Â ÀÌ ÄÚµå¿¡¼­´Â ´Ù·çÁö ¾ÊÀ½
+        // ê¹Šì´ ìŠ¤í…ì‹¤ ë²„í¼ ë° ë¸”ë Œë“œ ìƒíƒœëŠ” ì´ ì½”ë“œì—ì„œëŠ” ë‹¤ë£¨ì§€ ì•ŠìŒ
     }
 
-    // Direct3D ÀåÄ¡ ¹× ½º¿Ò Ã¼ÀÎÀ» »ı¼ºÇÏ´Â ÇÔ¼ö
+    // Direct3D ì¥ì¹˜ ë° ìŠ¤ì™‘ ì²´ì¸ì„ ìƒì„±í•˜ëŠ” í•¨ìˆ˜
     void CreateDeviceAndSwapChain(HWND hWindow) {
-        // Áö¿øÇÏ´Â Direct3D ±â´É ·¹º§À» Á¤ÀÇ
+        // ì§€ì›í•˜ëŠ” Direct3D ê¸°ëŠ¥ ë ˆë²¨ì„ ì •ì˜
         D3D_FEATURE_LEVEL featurelevels[] = { D3D_FEATURE_LEVEL_11_0 };
 
-        // ½º¿Ò Ã¼ÀÎ ¼³Á¤ ±¸Á¶Ã¼ ÃÊ±âÈ­
+        // ìŠ¤ì™‘ ì²´ì¸ ì„¤ì • êµ¬ì¡°ì²´ ì´ˆê¸°í™”
         DXGI_SWAP_CHAIN_DESC swapchaindesc = {};
-        swapchaindesc.BufferDesc.Width = 0; // Ã¢ Å©±â¿¡ ¸Â°Ô ÀÚµ¿À¸·Î ¼³Á¤
-        swapchaindesc.BufferDesc.Height = 0; // Ã¢ Å©±â¿¡ ¸Â°Ô ÀÚµ¿À¸·Î ¼³Á¤
-        swapchaindesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // »ö»ó Æ÷¸Ë
-        swapchaindesc.SampleDesc.Count = 1; // ¸ÖÆ¼ »ùÇÃ¸µ ºñÈ°¼ºÈ­
-        swapchaindesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // ·»´õ Å¸°ÙÀ¸·Î »ç¿ë
-        swapchaindesc.BufferCount = 2; // ´õºí ¹öÆÛ¸µ
-        swapchaindesc.OutputWindow = hWindow; // ·»´õ¸µÇÒ Ã¢ ÇÚµé
-        swapchaindesc.Windowed = TRUE; // Ã¢ ¸ğµå
-        swapchaindesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // ½º¿Ò ¹æ½Ä
+        swapchaindesc.BufferDesc.Width = 0; // ì°½ í¬ê¸°ì— ë§ê²Œ ìë™ìœ¼ë¡œ ì„¤ì •
+        swapchaindesc.BufferDesc.Height = 0; // ì°½ í¬ê¸°ì— ë§ê²Œ ìë™ìœ¼ë¡œ ì„¤ì •
+        swapchaindesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // ìƒ‰ìƒ í¬ë§·
+        swapchaindesc.SampleDesc.Count = 1; // ë©€í‹° ìƒ˜í”Œë§ ë¹„í™œì„±í™”
+        swapchaindesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT; // ë Œë” íƒ€ê²Ÿìœ¼ë¡œ ì‚¬ìš©
+        swapchaindesc.BufferCount = 2; // ë”ë¸” ë²„í¼ë§
+        swapchaindesc.OutputWindow = hWindow; // ë Œë”ë§í•  ì°½ í•¸ë“¤
+        swapchaindesc.Windowed = TRUE; // ì°½ ëª¨ë“œ
+        swapchaindesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // ìŠ¤ì™‘ ë°©ì‹
 
-        // Direct3D ÀåÄ¡¿Í ½º¿Ò Ã¼ÀÎÀ» »ı¼º
+        // Direct3D ì¥ì¹˜ì™€ ìŠ¤ì™‘ ì²´ì¸ì„ ìƒì„±
         D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
             D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG,
             featurelevels, ARRAYSIZE(featurelevels), D3D11_SDK_VERSION,
             &swapchaindesc, &SwapChain, &Device, nullptr, &DeviceContext);
 
-        // »ı¼ºµÈ ½º¿Ò Ã¼ÀÎÀÇ Á¤º¸ °¡Á®¿À±â
+        // ìƒì„±ëœ ìŠ¤ì™‘ ì²´ì¸ì˜ ì •ë³´ ê°€ì ¸ì˜¤ê¸°
         SwapChain->GetDesc(&swapchaindesc);
 
-        // ºäÆ÷Æ® Á¤º¸ ¼³Á¤
+        // ë·°í¬íŠ¸ ì •ë³´ ì„¤ì •
         ViewportInfo = { 0.0f, 0.0f, (float)swapchaindesc.BufferDesc.Width, (float)swapchaindesc.BufferDesc.Height, 0.0f, 1.0f };
     }
 
-    // Direct3D ÀåÄ¡ ¹× ½º¿Ò Ã¼ÀÎÀ» ÇØÁ¦ÇÏ´Â ÇÔ¼ö
+    // Direct3D ì¥ì¹˜ ë° ìŠ¤ì™‘ ì²´ì¸ì„ í•´ì œí•˜ëŠ” í•¨ìˆ˜
     void ReleaseDeviceAndSwapChain() {
         if (DeviceContext) {
-            DeviceContext->Flush(); // ³²¾ÆÀÖ´Â GPU ¸í·É ½ÇÇà
+            DeviceContext->Flush(); // ë‚¨ì•„ìˆëŠ” GPU ëª…ë ¹ ì‹¤í–‰
         }
 
         if (SwapChain) {
@@ -177,20 +253,20 @@ public:
         }
     }
 
-    // ÇÁ·¹ÀÓ ¹öÆÛ¸¦ »ı¼ºÇÏ´Â ÇÔ¼ö
+    // í”„ë ˆì„ ë²„í¼ë¥¼ ìƒì„±í•˜ëŠ” í•¨ìˆ˜
     void CreateFrameBuffer() {
-        // ½º¿Ò Ã¼ÀÎÀ¸·ÎºÎÅÍ ¹é ¹öÆÛ ÅØ½ºÃ³ °¡Á®¿À±â
+        // ìŠ¤ì™‘ ì²´ì¸ìœ¼ë¡œë¶€í„° ë°± ë²„í¼ í…ìŠ¤ì²˜ ê°€ì ¸ì˜¤ê¸°
         SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&FrameBuffer);
 
-        // ·»´õ Å¸°Ù ºä »ı¼º
+        // ë Œë” íƒ€ê²Ÿ ë·° ìƒì„±
         D3D11_RENDER_TARGET_VIEW_DESC framebufferRTVdesc = {};
-        framebufferRTVdesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB; // »ö»ó Æ÷¸Ë
-        framebufferRTVdesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D; // 2D ÅØ½ºÃ³
+        framebufferRTVdesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB; // ìƒ‰ìƒ í¬ë§·
+        framebufferRTVdesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D; // 2D í…ìŠ¤ì²˜
 
         Device->CreateRenderTargetView(FrameBuffer, &framebufferRTVdesc, &FrameBufferRTV);
     }
 
-    // ÇÁ·¹ÀÓ ¹öÆÛ¸¦ ÇØÁ¦ÇÏ´Â ÇÔ¼ö
+    // í”„ë ˆì„ ë²„í¼ë¥¼ í•´ì œí•˜ëŠ” í•¨ìˆ˜
     void ReleaseFrameBuffer() {
         if (FrameBuffer) {
             FrameBuffer->Release();
@@ -203,16 +279,16 @@ public:
         }
     }
 
-    // ·¡½ºÅÍ¶óÀÌÀú »óÅÂ¸¦ »ı¼ºÇÏ´Â ÇÔ¼ö
+    // ë˜ìŠ¤í„°ë¼ì´ì € ìƒíƒœë¥¼ ìƒì„±í•˜ëŠ” í•¨ìˆ˜
     void CreateRasterizerState() {
         D3D11_RASTERIZER_DESC rasterizerdesc = {};
-        rasterizerdesc.FillMode = D3D11_FILL_SOLID; // Ã¤¿ì±â ¸ğµå
-        rasterizerdesc.CullMode = D3D11_CULL_BACK; // ¹é ÆäÀÌ½º ÄÃ¸µ
+        rasterizerdesc.FillMode = D3D11_FILL_SOLID; // ì±„ìš°ê¸° ëª¨ë“œ
+        rasterizerdesc.CullMode = D3D11_CULL_BACK; // ë°± í˜ì´ìŠ¤ ì»¬ë§
 
         Device->CreateRasterizerState(&rasterizerdesc, &RasterizerState);
     }
 
-    // ·¡½ºÅÍ¶óÀÌÀú »óÅÂ¸¦ ÇØÁ¦ÇÏ´Â ÇÔ¼ö
+    // ë˜ìŠ¤í„°ë¼ì´ì € ìƒíƒœë¥¼ í•´ì œí•˜ëŠ” í•¨ìˆ˜
     void ReleaseRasterizerState() {
         if (RasterizerState) {
             RasterizerState->Release();
@@ -220,20 +296,20 @@ public:
         }
     }
 
-    // ·»´õ·¯¿¡ »ç¿ëµÈ ¸ğµç ¸®¼Ò½º¸¦ ÇØÁ¦ÇÏ´Â ÇÔ¼ö
+    // ë Œë”ëŸ¬ì— ì‚¬ìš©ëœ ëª¨ë“  ë¦¬ì†ŒìŠ¤ë¥¼ í•´ì œí•˜ëŠ” í•¨ìˆ˜
     void Release() {
         RasterizerState->Release();
 
-        // ·»´õ Å¸°ÙÀ» ÃÊ±âÈ­
+        // ë Œë” íƒ€ê²Ÿì„ ì´ˆê¸°í™”
         DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
 
         ReleaseFrameBuffer();
         ReleaseDeviceAndSwapChain();
     }
 
-    // ½º¿Ò Ã¼ÀÎÀÇ ¹é ¹öÆÛ¿Í ÇÁ·ĞÆ® ¹öÆÛ¸¦ ±³Ã¼ÇÏ¿© È­¸é¿¡ Ãâ·Â
+    // ìŠ¤ì™‘ ì²´ì¸ì˜ ë°± ë²„í¼ì™€ í”„ë¡ íŠ¸ ë²„í¼ë¥¼ êµì²´í•˜ì—¬ í™”ë©´ì— ì¶œë ¥
     void SwapBuffer() {
-        SwapChain->Present(1, 0); // 1: VSync È°¼ºÈ­
+        SwapChain->Present(1, 0); // 1: VSync í™œì„±í™”
     }
 
     void CreateShader() {
@@ -296,7 +372,7 @@ public:
         DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
         DeviceContext->IASetInputLayout(SimpleInputLayout);
 
-        // ¹öÅØ½º ½¦ÀÌ´õ¿¡ »ó¼ö ¹öÆÛ¸¦ ¼³Á¤ÇÕ´Ï´Ù.
+        // ë²„í…ìŠ¤ ì‰ì´ë”ì— ìƒìˆ˜ ë²„í¼ë¥¼ ì„¤ì •í•©ë‹ˆë‹¤.
         if (ConstantBuffer) {
             DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
         }
@@ -329,10 +405,10 @@ public:
         vertexBuffer->Release();
     }
 
-    // »ó¼ö ¹öÆÛ »ı¼º, ¼Ò¸ê ÇÔ¼ö Ãß°¡
+    // ìƒìˆ˜ ë²„í¼ ìƒì„±, ì†Œë©¸ í•¨ìˆ˜ ì¶”ê°€
     struct FConstants {
         FVector3 Offset;
-        float Scale; // °øÀÇ Å©±â(¹İÁö¸§)
+        float Scale; // ê³µì˜ í¬ê¸°(ë°˜ì§€ë¦„)
     };
 
     void CreateConstantBuffer() {
@@ -352,7 +428,7 @@ public:
         }
     }
 
-    // »ó¼ö ¹öÆÛ¸¦ °»½ÅÇÏ´Â ÇÔ¼ö
+    // ìƒìˆ˜ ë²„í¼ë¥¼ ê°±ì‹ í•˜ëŠ” í•¨ìˆ˜
     void UpdateConstant(FVector3 Offset, float Scale) {
         if (ConstantBuffer) {
             D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
@@ -361,86 +437,105 @@ public:
             FConstants* constants = (FConstants*)constantbufferMSR.pData;
             {
                 constants->Offset = Offset;
-                constants->Scale = Scale; // °øÀÇ Å©±â Àü´Ş
+                constants->Scale = Scale; // ê³µì˜ í¬ê¸° ì „ë‹¬
             }
             DeviceContext->Unmap(ConstantBuffer, 0);
         }
     }
 };
 
+// ëœë¤ ì‹¤ìˆ˜ ìƒì„±
+float RandomFloat(float Min, float Max) {
+    return Min + static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * (Max - Min);
+}
+
 class UBall {
 public:
-    FVector3 Location;  // °øÀÇ À§Ä¡
-    FVector3 Velocity;  // °øÀÇ ¼Óµµ
-    float Radius;       // °øÀÇ ¹İÁö¸§
-    float Mass;         // °øÀÇ Áú·®
+    FVector3 Location;  // ê³µì˜ ìœ„ì¹˜
+    FVector3 Velocity;  // ê³µì˜ ì†ë„
+    float Radius;       // ê³µì˜ ë°˜ì§€ë¦„
+    float Mass;         // ê³µì˜ ì§ˆëŸ‰
+    int PlayerFlag;     // ë§ˆì§€ë§‰ìœ¼ë¡œ ê³µê²©í•œ í”Œë ˆì´ì–´
 
-    // »ı¼ºÀÚ: ÀÓÀÇÀÇ Å©±â, À§Ä¡, ¼Óµµ¸¦ °¡Áø °ø »ı¼º
-    UBall() {
-        Radius = RandomFloat(0.05f, 0.15f); // 0.05~0.15 »çÀÌÀÇ ÀÓÀÇ Å©±â
-        Mass = Radius * 10.0f; // Å©±â¿¡ ºñ·ÊÇÏ´Â Áú·®
-        Location = FVector3(RandomFloat(-0.8f, 0.8f), RandomFloat(-0.8f, 0.8f), 0.0f);
-        Velocity = FVector3(RandomFloat(-0.02f, 0.02f), RandomFloat(-0.02f, 0.02f), 0.0f);
+    UBall(FVector3 Location, FVector3 Velocity, float Radius) : Location(Location), Velocity(Velocity), Radius(Radius) {
+        Mass = Radius * 10.0f; // í¬ê¸°ì— ë¹„ë¡€í•˜ëŠ” ì§ˆëŸ‰
     }
 
-    // °øÀ» ÀÌµ¿½ÃÅ°´Â ÇÔ¼ö
+    void SetPlayerFlag(int playerFlag) {
+        PlayerFlag = playerFlag;
+    }
+
+    // ê³µì„ ì´ë™ì‹œí‚¤ëŠ” í•¨ìˆ˜
     void Move() {
         Location.x += Velocity.x;
         Location.y += Velocity.y;
+        if (Velocity.x > 0.001f)
+            Velocity.x -= 0.0004f;
+        else if (Velocity.x < -0.001f)
+            Velocity.x += 0.0001f;
+        if (Velocity.y > 0.001f)
+            Velocity.y -= 0.0004f;
+        else if (Velocity.y < -0.001f)
+            Velocity.y += 0.0001f;
     }
 
-    // º®°úÀÇ Ãæµ¹ Ã³¸®
-    void CheckWallCollision() {
-        const float leftBorder = -1.0f + Radius;
-        const float rightBorder = 1.0f - Radius;
-        const float topBorder = 1.0f - Radius;
-        const float bottomBorder = -1.0f + Radius;
+    // ë²½ê³¼ì˜ ì¶©ëŒ ì²˜ë¦¬
+    char CheckWallCollision() {
+        const float leftBorder = -0.95f + Radius;
+        const float rightBorder = 0.95f - Radius;
+        const float topBorder = 0.475f - Radius;
+        const float bottomBorder = -0.475f + Radius;
 
         if (Location.x < leftBorder) {
-            Location.x = leftBorder;  // À§Ä¡ º¸Á¤
-            Velocity.x *= -1.0f;      // ¹İ»ç
-        } else if (Location.x > rightBorder) {
+            if (leftHole > Location.y && Location.y > -(leftHole)) {
+                Velocity = (0.0f);
+                scoreB++;
+
+                return 'B';
+            }
+            Location.x = leftBorder;  // ìœ„ì¹˜ ë³´ì •
+            Velocity.x *= -0.95f;      // ë°˜ì‚¬
+        }
+        else if (Location.x > rightBorder) {
+            if (rightHole > Location.y && Location.y > -(rightHole)) {
+                Velocity = (0.0f);
+                scoreA++;
+                return 'A';
+            }
             Location.x = rightBorder;
-            Velocity.x *= -1.0f;
+            Velocity.x *= -0.95f;
         }
 
-        if (Location.y > topBorder) { 
+        if (Location.y > topBorder) {
             Location.y = topBorder;
-            Velocity.y *= -1.0f;
-        } else if (Location.y < bottomBorder) { 
+            Velocity.y *= -0.95f;
+        }
+        else if (Location.y < bottomBorder) {
             Location.y = bottomBorder;
-
-            if (bUseGravity) {
-                Velocity.y *= -0.8f; // ¹Ù´Ú Ãæµ¹ ½Ã Åº¼º ¼Õ½Ç
-                if (fabs(Velocity.y) < 0.01f) { // ¸Å¿ì ÀÛÀº °ªÀÌ¸é ¸ØÃã
-                    Velocity.y = 0.0f;
-                }
-            } else {
-                Velocity.y *= -1.0f; // Áß·ÂÀÌ ¾øÀ» ¶§´Â ¿ÏÀü ¹İ»ç
-            }
+            Velocity.y *= -0.95f; // ì¤‘ë ¥ì´ ì—†ì„ ë•ŒëŠ” ì™„ì „ ë°˜ì‚¬
         }
     }
 
-    // µÎ °ø »çÀÌÀÇ Ãæµ¹ Ã³¸®
+    // ë‘ ê³µ ì‚¬ì´ì˜ ì¶©ëŒ ì²˜ë¦¬
     void ResolveCollision(UBall& Other) {
         FVector3 Diff = Location - Other.Location;
         float Distance = sqrt(Diff.x * Diff.x + Diff.y * Diff.y);
         float MinDist = Radius + Other.Radius;
 
-        if (Distance < MinDist) // Ãæµ¹ ¹ß»ı
+        if (Distance < MinDist) // ì¶©ëŒ ë°œìƒ
         {
-            // Ãæµ¹ ÈÄ ¼Óµµ ±³È¯ (Åº¼º Ãæµ¹ °ø½Ä Àû¿ë)
+            // ì¶©ëŒ í›„ ì†ë„ êµí™˜ (íƒ„ì„± ì¶©ëŒ ê³µì‹ ì ìš©)
             FVector3 Normal = Diff / Distance;
             FVector3 RelativeVelocity = Velocity - Other.Velocity;
             float Speed = (RelativeVelocity.x * Normal.x + RelativeVelocity.y * Normal.y);
 
-            if (Speed > 0) return; // ÀÌ¹Ì ¸Ö¾îÁö°í ÀÖ´Ù¸é Ã³¸®ÇÏÁö ¾ÊÀ½
+            if (Speed > 0) return; // ì´ë¯¸ ë©€ì–´ì§€ê³  ìˆë‹¤ë©´ ì²˜ë¦¬í•˜ì§€ ì•ŠìŒ
 
             float Impulse = 2.0f * Speed / (Mass + Other.Mass);
             Velocity -= Normal * Impulse * Other.Mass;
             Other.Velocity += Normal * Impulse * Mass;
 
-            // À§Ä¡ º¸Á¤: Ãæµ¹ÇÑ °øÀ» ¹Ğ¾î¼­ °ãÄ¡Áö ¾Êµµ·Ï ÇÔ
+            // ìœ„ì¹˜ ë³´ì •: ì¶©ëŒí•œ ê³µì„ ë°€ì–´ì„œ ê²¹ì¹˜ì§€ ì•Šë„ë¡ í•¨
             float Overlap = MinDist - Distance;
             FVector3 Correction = Normal * (Overlap / 2.0f);
 
@@ -450,72 +545,279 @@ public:
     }
 
     void Render(URenderer* renderer, ID3D11Buffer* vertexBuffer) {
-        if (nullptr ==  vertexBuffer) 
+        if (nullptr == vertexBuffer)
             return;
 
         renderer->UpdateConstant(Location, Radius);
         renderer->RenderPrimitive(vertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
     }
 
-    // ·£´ı ½Ç¼ö »ı¼º
-    float RandomFloat(float Min, float Max) {
-        return Min + static_cast<float>(rand()) / static_cast<float>(RAND_MAX / (Max - Min));
+
+};
+
+class UCork {
+public:
+    FVector3 Location;  // ì½•ì˜ ìœ„ì¹˜
+    FVector3 Velocity;  // ì½•ì˜ ì†ë„
+    float Radius;       // ì½•ì˜ ë°˜ì§€ë¦„
+    float Mass;         // ì½•ì˜ ì§ˆëŸ‰
+    int PlayerFlag;     // ì½•ì´ ì–´ë–¤ í”Œë ˆì´ì–´ì¸ì§€ ë‚˜íƒ€ë‚´ëŠ” í”Œë˜ê·¸
+    ID3D11Buffer* VertexBuffer;  // ë²„í…ìŠ¤ ë²„í¼
+    URenderer* Renderer;
+    UCork(FVector3 Location, float Radius, float Mass, int PlayerFlag, URenderer* renderer) : Location(Location), Radius(Radius), Mass(Mass), PlayerFlag(PlayerFlag) {
+        Renderer = renderer;
+        VertexBuffer = Renderer->CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
+    }
+
+    void SetLocationY(float deltaY) {
+        Location.y += deltaY;
+    }
+
+    void SetVelocityY(float deltaY) {
+        Velocity.y = deltaY;
+    }
+
+    void SetLocationX(float deltaX) {
+        Location.x += deltaX;
+    }
+
+    void SetVelocityX(float deltaX) {
+        Velocity.x = deltaX;
+    }
+
+    void SetInit(FVector3 location) {
+        Location = location;
+        Velocity = (0.0f);
+    }
+
+    void Render() {
+        if (nullptr == VertexBuffer)
+            return;
+
+        Renderer->UpdateConstant(Location, Radius);
+        Renderer->RenderPrimitive(VertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
+    }
+
+    // Corkì™€ Ball ì‚¬ì´ì˜ ì¶©ëŒ ì²˜ë¦¬
+    void ResolveCollision(UBall& Other) {
+        FVector3 Diff = Location - Other.Location;
+        float Distance = sqrt(Diff.x * Diff.x + Diff.y * Diff.y);
+        float MinDist = Radius + Other.Radius;
+
+        if (Distance < MinDist) // ì¶©ëŒ ë°œìƒ
+        {
+            FVector3 Normal = (Distance > 1e-6f) ? (Diff / Distance) : FVector3(0, 0, 0);
+            FVector3 RelativeVelocity = Velocity - Other.Velocity;
+            float Speed = (RelativeVelocity.x * Normal.x + RelativeVelocity.y * Normal.y);
+
+            // ê²¹ì³ ìˆì„ ë•Œë„ ì¶©ëŒ ì²˜ë¦¬ë¥¼ ê°•ì œ ì‹¤í–‰
+            if (Speed > 0 && Distance >= MinDist) return;
+
+            float Impulse = 2.0f * Speed / (Mass + Other.Mass);
+            Other.Velocity += Normal * Impulse * Mass;
+
+            // ìœ„ì¹˜ ë³´ì • ì¶”ê°€ (ê³µì´ ë„ˆë¬´ ê²¹ì¹˜ëŠ” ë¬¸ì œ ë°©ì§€)
+            float Overlap = MinDist - Distance;
+            FVector3 Correction = Normal * (Overlap / 2.0f);
+
+            Other.Location -= Correction;
+
+            // ê³µì—ê²Œ ë§ˆì§€ë§‰ìœ¼ë¡œ ê³µê²©í•œ í”Œë ˆì´ì–´ê°€ ëˆ„êµ¬ì¸ì§€ ì „ë‹¬
+            Other.SetPlayerFlag(PlayerFlag);
+
+        }
+    }
+};
+
+enum class EItem {
+    TwoBalls,
+    Slow,
+    MultipleGoals,
+    Stop,
+    TotalItemCount
+};
+
+EItem GetRandomItem() {
+    return static_cast<EItem>(rand() % static_cast<int>(EItem::TotalItemCount));
+}
+
+class UItem {
+public:
+    FVector3 Location;
+    EItem ItemType;
+
+    UItem(FVector3 Location, EItem ItemType) : Location(Location), ItemType(ItemType) {}
+
+    void Render(URenderer* renderer, ID3D11Buffer* vertexBuffer) {
+        if (nullptr == vertexBuffer)
+            return;
+
+        renderer->UpdateConstant(Location, 0.04f);
+        renderer->RenderPrimitive(vertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
+    }
+
+    // Itemì™€ Ball ì‚¬ì´ì˜ ì¶©ëŒ ì—¬ë¶€
+    bool IsCollisionWithItem(UBall& Other) {
+        FVector3 Diff = Location - Other.Location;
+        float Distance = sqrt(Diff.x * Diff.x + Diff.y * Diff.y);
+        float MinDist = 0.05f + Other.Radius;
+
+        if (Distance < MinDist) // ì•„ì´í…œê³¼ ê³µì´ ì¶©ëŒí•˜ë©´
+        {
+            return true;
+        }
+
+        return false;
+    }
+};
+
+class UItemManager {
+public:
+    UItem** ItemList;
+    int ItemCount;
+    int Capacity;      // ë°°ì—´ì˜ ìµœëŒ€ í¬ê¸° (ë¯¸ë¦¬ í• ë‹¹ëœ ê³µê°„)
+    URenderer* Renderer; // ë Œë”ëŸ¬ ì°¸ì¡°
+    ID3D11Buffer* VertexBuffer;  // ë²„í…ìŠ¤ ë²„í¼
+    bool bMultipleBalls; // ê³µì´ ë‘ê°œ ìˆëŠ”ì§€ ì—¬ë¶€
+
+    UItemManager(URenderer* renderer) {
+        ItemList = nullptr;
+        ItemCount = 0;
+        Capacity = 2;
+        Renderer = renderer;
+        VertexBuffer = nullptr;
+
+        ItemList = new UItem * [Capacity];
+
+        InitializeVertexBuffer();
+    }
+
+    void setbMultipleBalls(bool bMultiple) {
+        bMultipleBalls = bMultiple;
+    };
+
+    void AddItem() {
+        if (ItemCount <= Capacity) {
+            // ì•„ì´í…œ ëœë¤ ë½‘ê¸°
+            EItem newItem = GetRandomItem();
+            // ê³µì´ ë‘ê°œì´ë©´ ë” ì´ìƒ TwoBalls ì•„ì´í…œì´ ë‚˜ì˜¤ì§€ ì•ŠìŒ
+            while (bMultipleBalls && newItem == EItem::TwoBalls) {
+                newItem = GetRandomItem();
+            }
+
+            // ì¼ì‹œì 
+            if (bMultipleBalls) {
+                return;
+            }
+
+            ItemList[ItemCount] = new UItem(FVector3(RandomFloat(-0.9f, 0.9f), RandomFloat(-0.4f, 0.4f), 0.0f), EItem::TwoBalls);
+            ItemCount++;
+        }
+    }
+
+    void RemoveItem(UItem* Item) {
+        if (ItemCount == 0) return;
+
+        for (int i = 0; i < ItemCount; i++) {
+            if (ItemList[i] == Item) {
+                delete ItemList[i];
+                ItemList[i] = ItemList[ItemCount - 1];
+                ItemCount--;
+                return;
+            }
+        }
+
+    }
+
+    // ëª¨ë“  ì•„ì´í…œ ë Œë”ë§
+    void RenderItems() {
+        for (int i = 0; i < ItemCount; i++) {
+            ItemList[i]->Render(Renderer, VertexBuffer);
+        }
+    }
+
+    // VertexBuffer ì´ˆê¸°í™”
+    void InitializeVertexBuffer() {
+        if (nullptr == VertexBuffer) {
+            VertexBuffer = Renderer->CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
+        }
+    }
+
+    // Vertex Buffer í•´ì œ (í”„ë¡œê·¸ë¨ ì¢…ë£Œ ì‹œ ì‹¤í–‰)
+    void ReleaseVertexBuffer() {
+        if (VertexBuffer) {
+            Renderer->ReleaseVertexBuffer(VertexBuffer);
+            VertexBuffer = nullptr;
+        }
+    }
+
+    // ì†Œë©¸ì (ëª¨ë“  ê³µ ì‚­ì œ)
+    ~UItemManager() {
+        for (int i = 0; i < ItemCount; i++) {
+            delete ItemList[i];
+        }
+        delete[] ItemList;
+        ReleaseVertexBuffer();
     }
 };
 
 class UBallManager {
 public:
-    UBall** BallList; // ÀÌÁß Æ÷ÀÎÅÍ¸¦ ÀÌ¿ëÇÑ °ø ¸®½ºÆ®
-    int BallCount;    // ÇöÀç °øÀÇ °³¼ö
-    int Capacity;      // ¹è¿­ÀÇ ÃÖ´ë Å©±â (¹Ì¸® ÇÒ´çµÈ °ø°£)
-    URenderer* Renderer; // ·»´õ·¯ ÂüÁ¶
-    ID3D11Buffer* VertexBuffer;  // ¹öÅØ½º ¹öÆÛ
+    UBall** BallList; // ì´ì¤‘ í¬ì¸í„°ë¥¼ ì´ìš©í•œ ê³µ ë¦¬ìŠ¤íŠ¸
+    int BallCount;    // í˜„ì¬ ê³µì˜ ê°œìˆ˜
+    int Capacity;      // ë°°ì—´ì˜ ìµœëŒ€ í¬ê¸° (ë¯¸ë¦¬ í• ë‹¹ëœ ê³µê°„)
+    URenderer* Renderer; // ë Œë”ëŸ¬ ì°¸ì¡°
+    ID3D11Buffer* VertexBuffer;  // ë²„í…ìŠ¤ ë²„í¼
+    int MaxSpeed = 0.05f;
+    UItemManager* ItemManager;
 
-    // »ı¼ºÀÚ
-    UBallManager(URenderer* renderer) {
+    // ìƒì„±ì
+    UBallManager(URenderer* renderer, UItemManager* itemManager) {
         BallList = nullptr;
         BallCount = 0;
         Capacity = 15;
         Renderer = renderer;
+        ItemManager = itemManager;
         VertexBuffer = nullptr;
 
         BallList = new UBall * [Capacity];
 
-        // Vertex Buffer »ı¼º
+
+        // Vertex Buffer ìƒì„±
         InitializeVertexBuffer();
     }
 
-    // °ø Ãß°¡ ÇÔ¼ö
-    void AddBall() {
+    // ê³µ ì¶”ê°€ í•¨ìˆ˜
+    void AddBall(FVector3 Location) {
         if (BallCount >= Capacity) {
-            // ¹è¿­ Å©±â¸¦ 2¹è·Î È®Àå
+            // ë°°ì—´ í¬ê¸°ë¥¼ 2ë°°ë¡œ í™•ì¥
             Capacity *= 2;
             UBall** NewList = new UBall * [Capacity];
 
-            // ±âÁ¸ µ¥ÀÌÅÍ º¹»ç
+            // ê¸°ì¡´ ë°ì´í„° ë³µì‚¬
             memcpy(NewList, BallList, BallCount * sizeof(UBall*));
 
             delete[] BallList;
             BallList = NewList;
         }
 
-        // »õ °ø Ãß°¡
-        BallList[BallCount] = new UBall();
+        // ìƒˆ ê³µ ì¶”ê°€
+        BallList[BallCount] = new UBall(Location, FVector3(RandomFloat(-0.03f, 0.03f), RandomFloat(-0.02f, 0.02f), 0.0f), 0.05f);
         BallCount++;
     }
 
-    // °ø Á¦°Å (»èÁ¦ÇÒ ¿ä¼Ò¸¦ ¸¶Áö¸· ¿ä¼Ò¿Í ±³Ã¼)
+    // ê³µ ì œê±° (ì‚­ì œí•  ìš”ì†Œë¥¼ ë§ˆì§€ë§‰ ìš”ì†Œì™€ êµì²´)
     void RemoveBall() {
         if (BallCount == 0) return;
 
         int RemoveIndex = rand() % BallCount;
 
-        // ¸¶Áö¸· °ø°ú ÀÚ¸® ¹Ù²Ş
+        // ë§ˆì§€ë§‰ ê³µê³¼ ìë¦¬ ë°”ê¿ˆ
         delete BallList[RemoveIndex];
         BallList[RemoveIndex] = BallList[BallCount - 1];
         BallCount--;
 
-        // ¹è¿­ÀÌ ³Ê¹« Å©¸é ÁÙÀÌ±â
+        // ë°°ì—´ì´ ë„ˆë¬´ í¬ë©´ ì¤„ì´ê¸°
         if (BallCount < Capacity / 4 && Capacity > 15) {
             Capacity /= 2;
             UBall** NewList = new UBall * [Capacity];
@@ -527,47 +829,70 @@ public:
         }
     }
 
-    // ¸ğµç °ø ÀÌµ¿
-    void UpdateBalls() {
+    // ëª¨ë“  ê³µ ì´ë™
+    void UpdateBalls(UCork* CorkA, UCork* CorkB) {
         if (bUseGravity) {
-
             for (int i = 0; i < BallCount; i++) {
-                float acceleration = Gravity / BallList[i]->Mass; // Áß·Â °¡¼Óµµ = Gravity / Mass
-                BallList[i]->Velocity.y += acceleration; // Áú·®¿¡ ºñ·ÊÇÑ Áß·Â °¡¼Óµµ Àû¿ë
+                float acceleration = Gravity / BallList[i]->Mass; // ì¤‘ë ¥ ê°€ì†ë„ = Gravity / Mass
+                BallList[i]->Velocity.y += acceleration; // ì§ˆëŸ‰ì— ë¹„ë¡€í•œ ì¤‘ë ¥ ê°€ì†ë„ ì ìš©
             }
         }
 
         for (int i = 0; i < BallCount; i++) {
             BallList[i]->Move();
-            BallList[i]->CheckWallCollision();
+            isGoal = BallList[i]->CheckWallCollision();
+            if (isGoal == 'A' || isGoal == 'B') {
+                while (BallCount > 0)
+                    RemoveBall();
+                AddBall(FVector3(0.0f));
+                CorkA->SetInit(FVector3(-0.875f, 0.0f, 0.0f));
+                CorkB->SetInit(FVector3(0.875f, 0.0f, 0.0f));
+                break;
+            }
+            CorkA->ResolveCollision(*BallList[i]);
+            CorkB->ResolveCollision(*BallList[i]);
+
+            for (int j = 0; j < ItemManager->ItemCount; j++) {
+                if (ItemManager->ItemList[j]->IsCollisionWithItem(*BallList[i])) {
+                    if (ItemManager->ItemList[j]->ItemType == EItem::TwoBalls) {
+                        AddBall(ItemManager->ItemList[j]->Location);
+                    }
+                    ItemManager->RemoveItem(ItemManager->ItemList[j]);
+                }
+            }
         }
 
-        // °øÀÌ 1°³ ÀÌÇÏ¶ó¸é Ãæµ¹ ¿¬»ê ºÒÇÊ¿ä
-        if (BallCount < 2) return;
+        // ê³µì´ 1ê°œ ì´í•˜ë¼ë©´ ì¶©ëŒ ì—°ì‚° ë¶ˆí•„ìš”
+        if (BallCount < 2) {
+            ItemManager->setbMultipleBalls(false);
+            return;
+        }
+        ItemManager->setbMultipleBalls(true);
 
-        // Ãæµ¹ °¨Áö ¹× Ã³¸® (¸ğµç °ø ½Ö È®ÀÎ)
+        // ì¶©ëŒ ê°ì§€ ë° ì²˜ë¦¬ (ëª¨ë“  ê³µ ìŒ í™•ì¸)
         for (int i = 0; i < BallCount; i++) {
             for (int j = i + 1; j < BallCount; j++) {
                 BallList[i]->ResolveCollision(*BallList[j]);
             }
         }
+
     }
 
-    // ¸ğµç °ø ·»´õ¸µ
+    // ëª¨ë“  ê³µ ë Œë”ë§
     void RenderBalls() {
         for (int i = 0; i < BallCount; i++) {
             BallList[i]->Render(Renderer, VertexBuffer);
         }
     }
 
-    // VertexBuffer ÃÊ±âÈ­
+    // VertexBuffer ì´ˆê¸°í™”
     void InitializeVertexBuffer() {
         if (nullptr == VertexBuffer) {
             VertexBuffer = Renderer->CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
         }
     }
 
-    // Vertex Buffer ÇØÁ¦ (ÇÁ·Î±×·¥ Á¾·á ½Ã ½ÇÇà)
+    // Vertex Buffer í•´ì œ (í”„ë¡œê·¸ë¨ ì¢…ë£Œ ì‹œ ì‹¤í–‰)
     void ReleaseVertexBuffer() {
         if (VertexBuffer) {
             Renderer->ReleaseVertexBuffer(VertexBuffer);
@@ -575,7 +900,7 @@ public:
         }
     }
 
-    // ¼Ò¸êÀÚ (¸ğµç °ø »èÁ¦)
+    // ì†Œë©¸ì (ëª¨ë“  ê³µ ì‚­ì œ)
     ~UBallManager() {
         for (int i = 0; i < BallCount; i++) {
             delete BallList[i];
@@ -585,9 +910,11 @@ public:
     }
 };
 
+
+
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-// °¢Á¾ ¸Ş½ÃÁö¸¦ Ã³¸®ÇÒ ÇÔ¼ö
+// ê°ì¢… ë©”ì‹œì§€ë¥¼ ì²˜ë¦¬í•  í•¨ìˆ˜
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
     if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam)) {
         return true;
@@ -605,35 +932,105 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
     return 0;
 }
 
+DWORD WINAPI TimerThread(LPVOID lpParam) {
+    UItemManager* ItemManager = static_cast<UItemManager*>(lpParam);
+    while (true) {
+        if (ItemManager->ItemCount == 2) {
+            Sleep(10000);
+        }
+        else {
+            ItemManager->AddItem();
+            Sleep(10000);
+        }
+    }
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
-    // À©µµ¿ì Å¬·¡½º ÀÌ¸§
+    srand(static_cast<unsigned int>(time(nullptr))); // í˜„ì¬ ì‹œê°„ì„ ê¸°ë°˜ìœ¼ë¡œ ì‹œë“œ ì„¤ì •
+
+    // ìœˆë„ìš° í´ë˜ìŠ¤ ì´ë¦„
     WCHAR WindowClass[] = L"JungleWindowClass";
 
-    // À©µµ¿ì Å¸ÀÌÆ²¹Ù¿¡ Ç¥½ÃµÉ ÀÌ¸§
+    // ìœˆë„ìš° íƒ€ì´í‹€ë°”ì— í‘œì‹œë  ì´ë¦„
     WCHAR Title[] = L"Game Tech Lab";
 
-    // °¢Á¾ ¸Ş½ÃÁö¸¦ Ã³¸®ÇÒ ÇÔ¼öÀÎ WndProcÀÇ ÇÔ¼ö Æ÷ÀÎÅÍ¸¦ WindowClass ±¸Á¶Ã¼¿¡ ³Ö´Â´Ù.
+    // ê°ì¢… ë©”ì‹œì§€ë¥¼ ì²˜ë¦¬í•  í•¨ìˆ˜ì¸ WndProcì˜ í•¨ìˆ˜ í¬ì¸í„°ë¥¼ WindowClass êµ¬ì¡°ì²´ì— ë„£ëŠ”ë‹¤.
     WNDCLASSW wndclass = { 0, WndProc, 0, 0, 0, 0, 0, 0, 0, WindowClass };
 
-    // À©µµ¿ì Å¬·¡½º µî·Ï
+    // ìœˆë„ìš° í´ë˜ìŠ¤ ë“±ë¡
     RegisterClassW(&wndclass);
 
-    // 1024 x 1024 Å©±â¿¡ À©µµ¿ì »ı¼º
+    // 1024 x 1024 í¬ê¸°ì— ìœˆë„ìš° ìƒì„±
     HWND hWnd = CreateWindowExW(0, WindowClass, Title, WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT, 1024, 1024,
         nullptr, nullptr, hInstance, nullptr);
 
-    // Renderer Class¸¦ »ı¼ºÇÕ´Ï´Ù.
+    // Renderer Classë¥¼ ìƒì„±í•©ë‹ˆë‹¤.
     URenderer	renderer;
 
-    // D3D11 »ı¼ºÇÏ´Â ÇÔ¼ö¸¦ È£ÃâÇÕ´Ï´Ù.
+    // D3D11 ìƒì„±í•˜ëŠ” í•¨ìˆ˜ë¥¼ í˜¸ì¶œí•©ë‹ˆë‹¤.
     renderer.Create(hWnd);
-    // ·»´õ·¯ »ı¼º Á÷ÈÄ¿¡ ½¦ÀÌ´õ¸¦ »ı¼ºÇÏ´Â ÇÔ¼ö¸¦ È£ÃâÇÕ´Ï´Ù.
+    // ë Œë”ëŸ¬ ìƒì„± ì§í›„ì— ì‰ì´ë”ë¥¼ ìƒì„±í•˜ëŠ” í•¨ìˆ˜ë¥¼ í˜¸ì¶œí•©ë‹ˆë‹¤.
     renderer.CreateShader();
     renderer.CreateConstantBuffer();
 
-    UBallManager BallManager(&renderer);
-    BallManager.AddBall();
+
+    UItemManager ItemManager(&renderer);
+    HANDLE hThread = CreateThread(NULL, 0, TimerThread, &ItemManager, 0, NULL);
+
+
+    UBallManager BallManager(&renderer, &ItemManager);
+    BallManager.AddBall(FVector3(0.0f, 0.0f, 0.0f));
+
+
+
+    // ê°€ë¡œì„  ì„¸ë¡œì„  ìƒì„±
+    UINT numVerticeCube = sizeof(cube_vertices) / sizeof(FVertexSimple);
+    FVertexSimple horizontal[36];
+    FVertexSimple vertical[36];
+
+    for (UINT i = 0; i < numVerticeCube; i++)
+    {
+        //ê°€ë¡œì„  ìŠ¤ì¼€ì¼ë§
+        horizontal[i] = cube_vertices[i];
+        horizontal[i].x *= 2.0f;
+        horizontal[i].y *= 0.05f;
+
+        //ì„¸ë¡œì„  ìŠ¤ì¼€ì¼ë§
+        vertical[i] = cube_vertices[i];
+        vertical[i].x *= 0.1f;
+        vertical[i].y *= 1.0f;
+
+    }
+    ID3D11Buffer* vertexBufferHorizontal = renderer.CreateVertexBuffer(horizontal, sizeof(horizontal));
+    ID3D11Buffer* vertexBufferVertical = renderer.CreateVertexBuffer(vertical, sizeof(vertical));
+
+    //ê°€ë¡œì„ , ì„¸ë¡œì„  offset
+    FVector3 offsetHorizontal(0.0f, 0.5f, 0.0f);
+    FVector3 offsetVertical(-1.0f, 0.0f, 0.0f);
+
+    // ê³¨ëŒ€ A, B
+    FVertexSimple holeA[36];
+    FVertexSimple holeB[36];
+
+    for (UINT i = 0; i < numVerticeCube; i++)
+    {
+        //ê³¨ëŒ€ ìŠ¤ì¼€ì¼ë§
+        holeA[i] = cube_vertices[i];
+        holeA[i].x *= 0.1f;
+        holeA[i].y *= leftHole * 2;
+        holeA[i].r = 0.025f; holeA[i].g = 0.025f; holeA[i].b = 0.025f; holeA[i].a = 1.0f;
+
+        holeB[i] = cube_vertices[i];
+        holeB[i].x *= 0.1f;
+        holeB[i].y *= rightHole * 2;
+        holeB[i].r = 0.025f; holeB[i].g = 0.025f; holeB[i].b = 0.025f; holeB[i].a = 1.0f;
+    }
+    ID3D11Buffer* vertexBufferHoleA = renderer.CreateVertexBuffer(holeA, sizeof(holeA));
+    ID3D11Buffer* vertexBufferHoleB = renderer.CreateVertexBuffer(holeB, sizeof(holeB));
+
+    FVector3 offsetHoleA(-1.0f, 0.0f, 0.0f);
+    FVector3 offsetHoleB(1.0f, 0.0f, 0.0f);
 
     bool bIsExit = false;
 
@@ -643,30 +1040,52 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     HUD->ReplaceUI(UIState::MAIN);
     static bool bEscapeReady = true;
 
-    // FPS Á¦ÇÑÀ» À§ÇÑ ¼³Á¤
+    // FPS ì œí•œì„ ìœ„í•œ ì„¤ì •
     const int targetFPS = 60;
-    const double targetFrameTime = 1000.0 / targetFPS; // ÇÑ ÇÁ·¹ÀÓÀÇ ¸ñÇ¥ ½Ã°£ (¹Ğ¸®ÃÊ ´ÜÀ§)
+    const double targetFrameTime = 1000.0 / targetFPS; // í•œ í”„ë ˆì„ì˜ ëª©í‘œ ì‹œê°„ (ë°€ë¦¬ì´ˆ ë‹¨ìœ„)
 
-    // °í¼º´É Å¸ÀÌ¸Ó ÃÊ±âÈ­
+    // ê³ ì„±ëŠ¥ íƒ€ì´ë¨¸ ì´ˆê¸°í™”
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency);
 
     LARGE_INTEGER startTime, endTime;
     double elapsedTime = 0.0;
 
-    // Main Loop (Quit Message°¡ µé¾î¿À±â Àü±îÁö ¾Æ·¡ Loop¸¦ ¹«ÇÑÈ÷ ½ÇÇàÇÏ°Ô µÊ)
+    //í”Œë ˆì´ì–´A, B ì´ë™ì†ë„
+    float moveA = 0.03f;
+    float moveB = 0.03f;
+
+    // í”Œë ˆì´ì–´ Cork
+    UCork* CorkA = new UCork(FVector3(-0.875f, 0.0f, 0.0f), 0.07f, 35.0f, 1, &renderer);
+    UCork* CorkB = new UCork(FVector3(0.875f, 0.0f, 0.0f), 0.07f, 35.0f, 2, &renderer);
+
+    // Aì˜ ì´ˆê¸° ìœ„ì¹˜ ë° ëª©í‘œ ìœ„ì¹˜ ì„¤ì •
+    float initialXA = CorkA->Location.x; // Aì˜ ì›ë˜ ìœ„ì¹˜
+    float targetXA = CorkA->Location.x + 0.6f; // Aê°€ ì´ë™í•  ëª©í‘œ ìœ„ì¹˜
+
+    bool isMovingRightA = false;  // Aê°€ ì˜¤ë¥¸ìª½ìœ¼ë¡œ ì´ë™ ì¤‘ì¸ì§€
+    bool isReturningA = false;    // Aê°€ ì›ë˜ ìœ„ì¹˜ë¡œ ëŒì•„ì˜¤ëŠ” ì¤‘ì¸ì§€
+
+    // Bì˜ ì´ˆê¸° ìœ„ì¹˜ ë° ëª©í‘œ ìœ„ì¹˜ ì„¤ì •
+    float initialXB = CorkB->Location.x; // Bì˜ ì›ë˜ ìœ„ì¹˜
+    float targetXB = CorkB->Location.x - 0.6f; // Bê°€ ì´ë™í•  ëª©í‘œ ìœ„ì¹˜
+
+    bool isMovingLeftB = false;  // Bê°€ ì™¼ìª½ìœ¼ë¡œ ì´ë™ ì¤‘ì¸ì§€
+    bool isReturningB = false;   // Bê°€ ì›ë˜ ìœ„ì¹˜ë¡œ ëŒì•„ì˜¤ëŠ” ì¤‘ì¸ì§€
+
+    // Main Loop (Quit Messageê°€ ë“¤ì–´ì˜¤ê¸° ì „ê¹Œì§€ ì•„ë˜ Loopë¥¼ ë¬´í•œíˆ ì‹¤í–‰í•˜ê²Œ ë¨)
     while (bIsExit == false) {
-        // ·çÇÁ ½ÃÀÛ ½Ã°£ ±â·Ï
+        // ë£¨í”„ ì‹œì‘ ì‹œê°„ ê¸°ë¡
         QueryPerformanceCounter(&startTime);
 
         MSG msg;
 
-        // Ã³¸®ÇÒ ¸Ş½ÃÁö°¡ ´õ ÀÌ»ó ¾øÀ»¶§ ±îÁö ¼öÇà
+        // ì²˜ë¦¬í•  ë©”ì‹œì§€ê°€ ë” ì´ìƒ ì—†ì„ë•Œ ê¹Œì§€ ìˆ˜í–‰
         while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
-            // Å° ÀÔ·Â ¸Ş½ÃÁö¸¦ ¹ø¿ª
+            // í‚¤ ì…ë ¥ ë©”ì‹œì§€ë¥¼ ë²ˆì—­
             TranslateMessage(&msg);
 
-            // ¸Ş½ÃÁö¸¦ ÀûÀıÇÑ À©µµ¿ì ÇÁ·Î½ÃÀú¿¡ Àü´Ş, ¸Ş½ÃÁö°¡ À§¿¡¼­ µî·ÏÇÑ WndProc À¸·Î Àü´ŞµÊ
+            // ë©”ì‹œì§€ë¥¼ ì ì ˆí•œ ìœˆë„ìš° í”„ë¡œì‹œì €ì— ì „ë‹¬, ë©”ì‹œì§€ê°€ ìœ„ì—ì„œ ë“±ë¡í•œ WndProc ìœ¼ë¡œ ì „ë‹¬ë¨
             DispatchMessage(&msg);
 
             if (msg.message == WM_QUIT) {
@@ -688,35 +1107,160 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         {
             bEscapeReady = true;
         }
-
-            BallManager.UpdateBalls();
-            // ÁØºñ ÀÛ¾÷
-            renderer.Prepare();
-            renderer.PrepareShader();
-
-            BallManager.RenderBalls();
-
-            HUD->Update();
-
-            // ÇöÀç È­¸é¿¡ º¸¿©Áö´Â ¹öÆÛ¿Í ±×¸®±â ÀÛ¾÷À» À§ÇÑ ¹öÆÛ¸¦ ¼­·Î ±³È¯ÇÕ´Ï´Ù.
-            renderer.SwapBuffer();
-
-            do {
-                Sleep(0);
-
-                // ·çÇÁ Á¾·á ½Ã°£ ±â·Ï
-                QueryPerformanceCounter(&endTime);
-
-                // ÇÑ ÇÁ·¹ÀÓÀÌ ¼Ò¿äµÈ ½Ã°£ °è»ê (¹Ğ¸®ÃÊ ´ÜÀ§·Î º¯È¯)
-                elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
-
-            } while (elapsedTime < targetFrameTime);
+      
+        if (GetAsyncKeyState(0x57) & 0x8000 && CorkA->Location.y + moveA < 0.405f) {
+            CorkA->SetLocationY(moveA);
+            CorkA->SetVelocityY(moveA);
+        }
+        if (GetAsyncKeyState(0x53) & 0x8000 && CorkA->Location.y - moveA > -0.405f) {
+            CorkA->SetLocationY(-moveA);
+            CorkA->SetVelocityY(-moveA);
+        }
+        if (GetAsyncKeyState(VK_UP) & 0x8000 && CorkB->Location.y + moveB < 0.405f) {
+            CorkB->SetLocationY(moveB);
+            CorkB->SetVelocityY(moveB);
+        }
+        if (GetAsyncKeyState(VK_DOWN) & 0x8000 && CorkB->Location.y - moveB > -0.405f) {
+            CorkB->SetLocationY(-moveB);
+            CorkB->SetVelocityY(-moveB);
+        }
+        //ì™¼ìª½ ì»¨íŠ¸ë¡¤í‚¤
+        if (GetAsyncKeyState(VK_LCONTROL) & 0x8000 && !isMovingRightA && !isReturningA) {
+            isMovingRightA = true;
+        }
+        //ì—”í„°í‚¤
+        if (GetAsyncKeyState(VK_RETURN) & 0x8000 && !isMovingLeftB && !isReturningB) {
+            isMovingLeftB = true;
         }
 
-        // ReleaseShader() Á÷Àü¿¡ ¼Ò¸ê ÇÔ¼ö¸¦ Ãß°¡ÇÕ´Ï´Ù.
-        renderer.ReleaseConstantBuffer();
-        renderer.ReleaseShader();
-        renderer.Release();
+        // Aê°€ ì˜¤ë¥¸ìª½ìœ¼ë¡œ ì´ë™ ì¤‘ì´ë¼ë©´
+        if (isMovingRightA) {
+            if (CorkA->Location.x < targetXA) {
+                CorkA->SetLocationX(0.06f);
+                CorkA->SetVelocityX(0.06f);
+            }
+            else {
+                isMovingRightA = false;
+                isReturningA = true; // ì›ë˜ ìœ„ì¹˜ë¡œ ëŒì•„ê°€ê¸° ì‹œì‘
+            }
+        }
 
-        return 0;
+        // Aê°€ ì›ë˜ ìœ„ì¹˜ë¡œ ëŒì•„ì˜¤ëŠ” ì¤‘ì´ë¼ë©´
+        if (isReturningA) {
+            if (CorkA->Location.x > initialXA) {
+                CorkA->SetLocationX(-0.06f);
+                CorkA->SetVelocityX(-0.06f);
+            }
+            else {
+                isReturningA = false; // ë³µê·€ ì™„ë£Œ
+            }
+        }
+
+        // Bê°€ ì™¼ìª½ìœ¼ë¡œ ì´ë™ ì¤‘ì´ë¼ë©´
+        if (isMovingLeftB) {
+            if (CorkB->Location.x > targetXB) {
+                CorkB->SetLocationX(-0.06f);
+                CorkB->SetVelocityX(-0.06f);
+            }
+            else {
+                isMovingLeftB = false;
+                isReturningB = true; // ì›ë˜ ìœ„ì¹˜ë¡œ ëŒì•„ê°€ê¸° ì‹œì‘
+            }
+        }
+
+        // Bê°€ ì›ë˜ ìœ„ì¹˜ë¡œ ëŒì•„ì˜¤ëŠ” ì¤‘ì´ë¼ë©´
+        if (isReturningB) {
+            if (CorkB->Location.x < initialXB) {
+                CorkB->SetLocationX(0.06f);
+                CorkB->SetVelocityX(0.06f);
+            }
+            else {
+                isReturningB = false; // ë³µê·€ ì™„ë£Œ
+            }
+        }
+
+        BallManager.UpdateBalls(CorkA, CorkB);
+
+        CorkA->SetVelocityY(0.0f);
+        CorkB->SetVelocityY(0.0f);
+
+        if (!isMovingRightA && !isReturningA)
+            CorkA->SetVelocityX(0.0f);
+        if (!isMovingLeftB && !isReturningB)
+            CorkB->SetVelocityX(0.0f);
+
+        // ì¤€ë¹„ ì‘ì—…
+        renderer.Prepare();
+        renderer.PrepareShader();
+
+        BallManager.RenderBalls();
+        ItemManager.RenderItems();
+
+        HUD->Update();
+      
+        //ê°€ë¡œë²½ ë Œë”ë§
+        renderer.UpdateConstant(offsetHorizontal, 1.0f);
+        renderer.RenderPrimitive(vertexBufferHorizontal, numVerticeCube);
+        offsetHorizontal.y *= -1.0f; //offset ë³€ê²½
+        renderer.UpdateConstant(offsetHorizontal, 1.0f);
+        renderer.RenderPrimitive(vertexBufferHorizontal, numVerticeCube);
+
+        //ì„¸ë¡œë²½ ë Œë”ë§
+        renderer.UpdateConstant(offsetVertical, 1.0f);
+        renderer.RenderPrimitive(vertexBufferVertical, numVerticeCube);
+        offsetVertical.x *= -1.0f;  //offset ë³€ê²½
+        renderer.UpdateConstant(offsetVertical, 1.0f);
+        renderer.RenderPrimitive(vertexBufferVertical, numVerticeCube);
+
+        //í™€ ë Œë”ë§
+        renderer.UpdateConstant(offsetHoleA, 1.0f);
+        renderer.RenderPrimitive(vertexBufferHoleA, numVerticeCube);
+        renderer.UpdateConstant(offsetHoleB, 1.0f);
+        renderer.RenderPrimitive(vertexBufferHoleB, numVerticeCube);
+
+        //í”Œë ˆì´ì–´A ë Œë”ë§
+        CorkA->Render();
+
+        //í”Œë ˆì´ì–´B ë Œë”ë§
+        CorkB->Render();
+
+        ImGui_ImplDX11_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
+
+        // ì´í›„ ImGui UI ì»¨íŠ¸ë¡¤ ì¶”ê°€ëŠ” ImGui::NewFrame()ê³¼ ImGui::Render() ì‚¬ì´ì¸ ì—¬ê¸°ì— ìœ„ì¹˜í•©ë‹ˆë‹¤.
+        ImGui::Begin("Jungle Property Window");
+
+        ImGui::Text("Hello Jungle World!");
+
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+        // í˜„ì¬ í™”ë©´ì— ë³´ì—¬ì§€ëŠ” ë²„í¼ì™€ ê·¸ë¦¬ê¸° ì‘ì—…ì„ ìœ„í•œ ë²„í¼ë¥¼ ì„œë¡œ êµí™˜í•©ë‹ˆë‹¤.
+        renderer.SwapBuffer();
+
+        do {
+            Sleep(0);
+
+            // ë£¨í”„ ì¢…ë£Œ ì‹œê°„ ê¸°ë¡
+            QueryPerformanceCounter(&endTime);
+
+            // í•œ í”„ë ˆì„ì´ ì†Œìš”ëœ ì‹œê°„ ê³„ì‚° (ë°€ë¦¬ì´ˆ ë‹¨ìœ„ë¡œ ë³€í™˜)
+            elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
+
+        } while (elapsedTime < targetFrameTime);
+    }
+
+    // ReleaseShader() ì§ì „ì— ì†Œë©¸ í•¨ìˆ˜ë¥¼ ì¶”ê°€í•©ë‹ˆë‹¤.
+    renderer.ReleaseConstantBuffer();
+    renderer.ReleaseVertexBuffer(vertexBufferHorizontal);
+    renderer.ReleaseVertexBuffer(vertexBufferVertical);
+    renderer.ReleaseVertexBuffer(vertexBufferHoleA);
+    renderer.ReleaseVertexBuffer(vertexBufferHoleB);
+    renderer.ReleaseShader();
+    renderer.Release();
+
+    return 0;
 }
