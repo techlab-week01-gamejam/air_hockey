@@ -714,14 +714,24 @@ public:
         ItemList = new UItem * [Capacity];
     }
 
+    bool HasTwoBallsInItemList() {
+        for (int i = 0; i < ItemCount; i++) {
+            if (ItemList[i]->ItemType == EItem::TwoBalls) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     void AddItem()
     {
         if (ItemCount <= Capacity)
         {
             // 아이템 랜덤 뽑기
             EItem newItem = GetRandomItem();
-            // 공이 두개이면 더 이상 TwoBalls 아이템이 나오지 않음
-            while (bMultipleBalls && newItem == EItem::TwoBalls)
+            // 공이 두개이거나 TwoBalls 아이템이 현재 map에 있으면 더 이상 TwoBalls 아이템이 나오지 않음
+            while (bMultipleBalls && newItem == EItem::TwoBalls && !HasTwoBallsInItemList())
             {
                 newItem = GetRandomItem();
             }
@@ -979,15 +989,6 @@ public:
     // 모든 공 이동
     void UpdateBalls(UCork* CorkA, UCork* CorkB)
     {
-        if (bUseGravity)
-        {
-            for (int i = 0; i < BallCount; i++)
-            {
-                float acceleration = Gravity / BallList[i]->Mass; // 중력 가속도 = Gravity / Mass
-                BallList[i]->Velocity.y += acceleration; // 질량에 비례한 중력 가속도 적용
-            }
-        }
-
         for (int i = 0; i < BallCount; i++)
         {
             BallList[i]->Move();
