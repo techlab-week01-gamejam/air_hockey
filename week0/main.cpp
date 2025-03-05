@@ -577,6 +577,7 @@ public:
             Location.y = bottomBorder;
             Velocity.y *= -0.95f; // 중력이 없을 때는 완전 반사
         }
+        return 0;
     }
 
     // 두 공 사이의 충돌 처리
@@ -620,94 +621,11 @@ public:
 
 };
 
-class UCork
-{
-public:
-    FVector3 Location;  // 콕의 위치
-    FVector3 Velocity;  // 콕의 속도
-    float Radius;       // 콕의 반지름
-    float Mass;         // 콕의 질량
-    int PlayerFlag;     // 콕이 어떤 플레이어인지 나타내는 플래그
-    ID3D11Buffer* VertexBuffer;  // 버텍스 버퍼
-    URenderer* Renderer;
-    UCork(FVector3 Location, float Radius, float Mass, int PlayerFlag, URenderer* renderer) : Location(Location), Radius(Radius), Mass(Mass), PlayerFlag(PlayerFlag)
-    {
-        Renderer = renderer;
-        VertexBuffer = Renderer->CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
-    }
-
-    void SetLocationY(float deltaY)
-    {
-        Location.y += deltaY;
-    }
-
-    void SetVelocityY(float deltaY)
-    {
-        Velocity.y = deltaY;
-    }
-
-    void SetLocationX(float deltaX)
-    {
-        Location.x += deltaX;
-    }
-
-    void SetVelocityX(float deltaX)
-    {
-        Velocity.x = deltaX;
-    }
-
-    void SetInit(FVector3 location)
-    {
-        Location = location;
-        Velocity = (0.0f);
-    }
-
-    void Render()
-    {
-        if (nullptr == VertexBuffer)
-            return;
-
-        Renderer->UpdateConstant(Location, Radius);
-        Renderer->RenderPrimitive(VertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
-    }
-
-    // Cork와 Ball 사이의 충돌 처리
-    void ResolveCollision(UBall& Other)
-    {
-        FVector3 Diff = Location - Other.Location;
-        float Distance = sqrt(Diff.x * Diff.x + Diff.y * Diff.y);
-        float MinDist = Radius + Other.Radius;
-
-        if (Distance < MinDist) // 충돌 발생
-        {
-            FVector3 Normal = (Distance > 1e-6f) ? (Diff / Distance) : FVector3(0, 0, 0);
-            FVector3 RelativeVelocity = Velocity - Other.Velocity;
-            float Speed = (RelativeVelocity.x * Normal.x + RelativeVelocity.y * Normal.y);
-
-            // 겹쳐 있을 때도 충돌 처리를 강제 실행
-            if (Speed > 0 && Distance >= MinDist) return;
-
-            float Impulse = 2.0f * Speed / (Mass + Other.Mass);
-            Other.Velocity += Normal * Impulse * Mass;
-
-            // 위치 보정 추가 (공이 너무 겹치는 문제 방지)
-            float Overlap = MinDist - Distance;
-            FVector3 Correction = Normal * (Overlap / 2.0f);
-
-            Other.Location -= Correction;
-
-            // 공에게 마지막으로 공격한 플레이어가 누구인지 전달
-            Other.SetPlayerFlag(PlayerFlag);
-
-        }
-    }
-};
 
 enum class EItem
 {
     TwoBalls,
     Slow,
-    MultipleGoals,
     Stop,
     TotalItemCount
 };
@@ -808,13 +726,7 @@ public:
                 newItem = GetRandomItem();
             }
 
-            // 일시적
-            if (bMultipleBalls)
-            {
-                return;
-            }
-
-            ItemList[ItemCount] = new UItem(FVector3(RandomFloat(-0.9f, 0.9f), RandomFloat(-0.4f, 0.4f), 0.0f), EItem::TwoBalls);
+            ItemList[ItemCount] = new UItem(FVector3(RandomFloat(-0.9f, 0.9f), RandomFloat(-0.4f, 0.4f), 0.0f), GetRandomItem());
             ItemCount++;
         }
     }
@@ -876,8 +788,107 @@ public:
     }
 };
 
-class UBallManager
-{
+enum class EPlayerBuff {
+    None,
+    Slow,
+    Stop,
+};
+
+class UCork {
+public:
+    FVector3 Location;  // 콕의 위치
+    FVector3 Velocity;  // 콕의 속도
+    float Radius;       // 콕의 반지름
+    float Mass;         // 콕의 질량
+    int PlayerFlag;     // 콕이 어떤 플레이어인지 나타내는 플래그
+    EPlayerBuff PlayerBuff;   // 플레이어의 아이템 버프 상태
+    ID3D11Buffer* VertexBuffer;  // 버텍스 버퍼
+    URenderer* Renderer;
+
+
+    UCork(FVector3 Location, float Radius, float Mass, int PlayerFlag, URenderer* renderer) : Location(Location), Radius(Radius), Mass(Mass), PlayerFlag(PlayerFlag) {
+        Renderer = renderer;
+        VertexBuffer = Renderer->CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
+    }
+
+    void SetLocationY(float deltaY) {
+        Location.y += deltaY;
+    }
+
+    void SetVelocityY(float deltaY) {
+        Velocity.y = deltaY;
+    }
+
+    void SetLocationX(float deltaX) {
+        Location.x += deltaX;
+    }
+
+    void SetVelocityX(float deltaX) {
+        Velocity.x = deltaX;
+    }
+
+    void SetInit(FVector3 location) {
+        Location = location;
+        Velocity = (0.0f);
+    }
+
+    void SetPlayerBuff(EPlayerBuff playerBuff) {
+        PlayerBuff = playerBuff;
+    }
+
+    void Render() {
+        if (nullptr == VertexBuffer)
+            return;
+
+        Renderer->UpdateConstant(Location, Radius);
+        Renderer->RenderPrimitive(VertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
+    }
+
+    // Cork와 Ball 사이의 충돌 처리
+    void ResolveCollision(UBall& Other) {
+        FVector3 Diff = Location - Other.Location;
+        float Distance = sqrt(Diff.x * Diff.x + Diff.y * Diff.y);
+        float MinDist = Radius + Other.Radius;
+
+        if (Distance < MinDist) // 충돌 발생
+        {
+            FVector3 Normal = (Distance > 1e-6f) ? (Diff / Distance) : FVector3(0, 0, 0);
+            FVector3 RelativeVelocity = Velocity - Other.Velocity;
+            float Speed = (RelativeVelocity.x * Normal.x + RelativeVelocity.y * Normal.y);
+
+            // 겹쳐 있을 때도 충돌 처리를 강제 실행
+            if (Speed > 0 && Distance >= MinDist) return;
+
+            float Impulse = 2.0f * Speed / (Mass + Other.Mass);
+            Other.Velocity += Normal * Impulse * Mass;
+
+            // 위치 보정 추가 (공이 너무 겹치는 문제 방지)
+            float Overlap = MinDist - Distance;
+            FVector3 Correction = Normal * (Overlap / 2.0f);
+
+            Other.Location -= Correction;
+
+            // 공에게 마지막으로 공격한 플레이어가 누구인지 전달
+            Other.SetPlayerFlag(PlayerFlag);
+
+        }
+    }
+};
+
+DWORD WINAPI BuffTimerThread(LPVOID lpParam) {
+    UCork* Cork = static_cast<UCork*>(lpParam);
+    if (!Cork) {
+        return 0;
+    }
+    if (!(Cork->PlayerBuff == EPlayerBuff::None)) {
+        Sleep(3000);
+        Cork->SetPlayerBuff(EPlayerBuff::None);
+    }
+    
+    return 0;
+}
+
+class UBallManager {
 public:
     UBall** BallList; // 이중 포인터를 이용한 공 리스트
     int BallCount;    // 현재 공의 개수
@@ -909,7 +920,7 @@ public:
     {
         while (BallCount > 0)
         {
-            RemoveBall();
+            RemoveBall(BallCount-1);
         }
         
         AddBall(FVector3(0.0f, 0.0f, 0.0f));
@@ -936,25 +947,29 @@ public:
         BallCount++;
     }
 
-    // 공 제거 (삭제할 요소를 마지막 요소와 교체)
-    void RemoveBall()
-    {
-        if (BallCount == 0) return;
+    // 공 제거
+    void RemoveBall(int index) {
+        if (BallCount == 0 || index >= BallCount) return; // 잘못된 인덱스 방지
 
-        int RemoveIndex = rand() % BallCount;
+        // 삭제 대상 공 메모리 해제
+        delete BallList[index];
 
-        // 마지막 공과 자리 바꿈
-        delete BallList[RemoveIndex];
-        BallList[RemoveIndex] = BallList[BallCount - 1];
+        // 마지막 공을 현재 위치로 이동 (리스트 내에서만 이동)
+        if (index != BallCount - 1) {
+            BallList[index] = BallList[BallCount - 1];
+        }
+
         BallCount--;
 
-        // 배열이 너무 크면 줄이기
-        if (BallCount < Capacity / 4 && Capacity > 15)
-        {
+        // 배열 크기 최적화 (메모리 줄이기)
+        if (BallCount < Capacity / 4 && Capacity > 15) {
             Capacity /= 2;
             UBall** NewList = new UBall * [Capacity];
 
-            memcpy(NewList, BallList, BallCount * sizeof(UBall*));
+            // 안전하게 복사
+            for (int i = 0; i < BallCount; i++) {
+                NewList[i] = BallList[i];
+            }
 
             delete[] BallList;
             BallList = NewList;
@@ -977,13 +992,19 @@ public:
         {
             BallList[i]->Move();
             isGoal = BallList[i]->CheckWallCollision();
-            if (isGoal == 'A' || isGoal == 'B')
-            {
-                while (BallCount > 0)
-                    RemoveBall();
-                AddBall(FVector3(0.0f));
-                CorkA->SetInit(FVector3(-0.875f, 0.0f, 0.0f));
-                CorkB->SetInit(FVector3(0.875f, 0.0f, 0.0f));
+            if (isGoal == 'A' || isGoal == 'B') {
+                if (scoreA == 3 || scoreB == 3) {
+                    while (BallCount > 0)
+                        RemoveBall(BallCount - 1);
+                    CorkA->SetInit(FVector3(-0.875f, 0.0f, 0.0f));
+                    CorkB->SetInit(FVector3(0.875f, 0.0f, 0.0f));
+                    AddBall(FVector3(0.0f));
+                    scoreA = 0; scoreB = 0;
+                    break;
+                }
+                RemoveBall(i);
+                if (BallCount == 0)
+                    AddBall(FVector3(0.0f));
                 break;
             }
             CorkA->ResolveCollision(*BallList[i]);
@@ -997,7 +1018,33 @@ public:
                     {
                         AddBall(ItemManager->ItemList[j]->Location);
                     }
+                    else {
+                        if (BallList[i]->PlayerFlag == 1) {
+                            if (ItemManager->ItemList[j]->ItemType == EItem::Slow) {
+                                CorkA->SetPlayerBuff(EPlayerBuff::Slow);
+                                HANDLE hThread = CreateThread(NULL, 0, BuffTimerThread, CorkA, 0, NULL);
+                                if (hThread) CloseHandle(hThread);
+                            }else if (ItemManager->ItemList[j]->ItemType == EItem::Stop) {
+                                CorkA->SetPlayerBuff(EPlayerBuff::Stop);
+                                HANDLE hThread = CreateThread(NULL, 0, BuffTimerThread, CorkA, 0, NULL);
+                                if (hThread) CloseHandle(hThread);
+                            }
+                        }
+                        else {
+                            if (ItemManager->ItemList[j]->ItemType == EItem::Slow) {
+                                CorkB->SetPlayerBuff(EPlayerBuff::Slow);
+                                HANDLE hThread = CreateThread(NULL, 0, BuffTimerThread, CorkB, 0, NULL);
+                                if (hThread) CloseHandle(hThread);
+                            }
+                            else if (ItemManager->ItemList[j]->ItemType == EItem::Stop) {
+                                CorkB->SetPlayerBuff(EPlayerBuff::Stop);
+                                HANDLE hThread = CreateThread(NULL, 0, BuffTimerThread, CorkB, 0, NULL);
+                                if (hThread) CloseHandle(hThread);
+                            }
+                        }
+                    }
                     ItemManager->RemoveItem(ItemManager->ItemList[j]);
+                    
                 }
             }
         }
@@ -1304,39 +1351,75 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         #pragma endregion
 
         #pragma region Logic
-        if (GameManager::Get().IsPlaying() && HUD->GetCurrentState() == EUIState::GAME)
-        {
-            if (GetAsyncKeyState(0x57) & 0x8000 && CorkA->Location.y + moveA < 0.405f)
-            {
-                CorkA->SetLocationY(moveA);
-                CorkA->SetVelocityY(moveA);
+        if (GameManager::Get().IsPlaying() && HUD->GetCurrentState() == EUIState::GAME) {
+
+            if (GetAsyncKeyState(0x57) & 0x8000 && CorkA->Location.y + moveA < 0.405f) {
+                if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
+                    CorkA->SetLocationY(moveA/2);
+                    CorkA->SetVelocityY(moveA/2);
+                }
+                else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
+                    CorkA->SetLocationY(0);
+                    CorkA->SetVelocityY(0);
+                }
+                else {
+                    CorkA->SetLocationY(moveA);
+                    CorkA->SetVelocityY(moveA);
+                }
             }
-            if (GetAsyncKeyState(0x53) & 0x8000 && CorkA->Location.y - moveA > -0.405f)
-            {
-                CorkA->SetLocationY(-moveA);
-                CorkA->SetVelocityY(-moveA);
+            if (GetAsyncKeyState(0x53) & 0x8000 && CorkA->Location.y - moveA > -0.405f) {
+                if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
+                    CorkA->SetLocationY(-moveA/2);
+                    CorkA->SetVelocityY(-moveA/2);
+                }
+                else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
+                    CorkA->SetLocationY(0);
+                    CorkA->SetVelocityY(0);
+                }
+                else {
+                    CorkA->SetLocationY(-moveA);
+                    CorkA->SetVelocityY(-moveA);
+                }
+
             }
-            if (GetAsyncKeyState(VK_UP) & 0x8000 && CorkB->Location.y + moveB < 0.405f)
-            {
-                CorkB->SetLocationY(moveB);
-                CorkB->SetVelocityY(moveB);
+            if (GetAsyncKeyState(VK_UP) & 0x8000 && CorkB->Location.y + moveB < 0.405f) {
+                if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
+                    CorkB->SetLocationY(moveB/2);
+                    CorkB->SetVelocityY(moveB/2);
+                }
+                else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
+                    CorkB->SetLocationY(0);
+                    CorkB->SetVelocityY(0);
+                }
+                else {
+                    CorkB->SetLocationY(moveB);
+                    CorkB->SetVelocityY(moveB);
+                }
+
             }
-            if (GetAsyncKeyState(VK_DOWN) & 0x8000 && CorkB->Location.y - moveB > -0.405f)
-            {
-                CorkB->SetLocationY(-moveB);
-                CorkB->SetVelocityY(-moveB);
+            if (GetAsyncKeyState(VK_DOWN) & 0x8000 && CorkB->Location.y - moveB > -0.405f) {
+                if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
+                    CorkB->SetLocationY(-moveB/2);
+                    CorkB->SetVelocityY(-moveB/2);
+                }
+                else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
+                    CorkB->SetLocationY(0);
+                    CorkB->SetVelocityY(0);
+                }
+                else {
+                    CorkB->SetLocationY(-moveB);
+                    CorkB->SetVelocityY(-moveB);
+                }
+
             }
             //왼쪽 컨트롤키
-            if (GetAsyncKeyState(VK_LCONTROL) & 0x8000 && !isMovingRightA && !isReturningA)
-            {
+            if (GetAsyncKeyState(VK_LCONTROL) & 0x8000 && !isMovingRightA && !isReturningA) {
                 isMovingRightA = true;
             }
             //엔터키
-            if (GetAsyncKeyState(VK_RETURN) & 0x8000 && !isMovingLeftB && !isReturningB)
-            {
+            if (GetAsyncKeyState(VK_RETURN) & 0x8000 && !isMovingLeftB && !isReturningB) {
                 isMovingLeftB = true;
             }
-
             // A가 오른쪽으로 이동 중이라면
             if (isMovingRightA)
             {
