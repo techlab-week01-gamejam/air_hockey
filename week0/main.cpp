@@ -699,12 +699,6 @@ public:
             while (bMultipleBalls && newItem == EItem::TwoBalls) {
                 newItem = GetRandomItem();
             }
-
-            // 일시적
-            if (bMultipleBalls) {
-                return;
-            }
-
             ItemList[ItemCount] = new UItem(FVector3(RandomFloat(-0.9f, 0.9f), RandomFloat(-0.4f, 0.4f), 0.0f), EItem::TwoBalls);
             ItemCount++;
         }
@@ -847,12 +841,12 @@ public:
             CorkA->ResolveCollision(*BallList[i]);
             CorkB->ResolveCollision(*BallList[i]);
 
-            for (int j = 0; j < ItemManager->ItemCount; j++) {
-                if (ItemManager->ItemList[j]->IsCollisionWithItem(*BallList[i])) {
-                    if (ItemManager->ItemList[j]->ItemType == EItem::TwoBalls) {
-                        AddBall(ItemManager->ItemList[j]->Location);
+            for (int i = 0; i < ItemManager->ItemCount; i++) {
+                if (ItemManager->ItemList[i]->IsCollisionWithItem(*BallList[i])) {
+                    if (ItemManager->ItemList[i]->ItemType == EItem::TwoBalls) {
+                        AddBall(ItemManager->ItemList[i]->Location);
                     }
-                    ItemManager->RemoveItem(ItemManager->ItemList[j]);
+                    ItemManager->RemoveItem(ItemManager->ItemList[i]);
                 }
             }
         }
@@ -930,7 +924,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 DWORD WINAPI TimerThread(LPVOID lpParam) {
     UItemManager* ItemManager = static_cast<UItemManager*>(lpParam);
     while (true) {
-        if (ItemManager->ItemCount == 2) {
+        if (ItemManager->ItemCount == 1) {
             Sleep(10000);
         }
         else {
