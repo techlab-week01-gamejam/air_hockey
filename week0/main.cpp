@@ -448,6 +448,7 @@ public:
 
         DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
         DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+
     }
 
     void PrepareShader()
@@ -573,11 +574,11 @@ public:
         Location.x += Velocity.x;
         Location.y += Velocity.y;
         if (Velocity.x > 0.001f)
-            Velocity.x -= 0.0004f;
+            Velocity.x -= 0.0005f;
         else if (Velocity.x < -0.001f)
             Velocity.x += 0.0001f;
         if (Velocity.y > 0.001f)
-            Velocity.y -= 0.0004f;
+            Velocity.y -= 0.0005f;
         else if (Velocity.y < -0.001f)
             Velocity.y += 0.0001f;
     }
@@ -590,25 +591,25 @@ public:
         const float topBorder = 0.475f - Radius;
         const float bottomBorder = -0.475f + Radius;
 
-        if (Location.x < leftBorder && (Location.y > leftHole || Location.y < -leftHole))
+        if (Location.x < leftBorder && (Location.y > leftHole - 0.025f || Location.y < -leftHole + 0.025f))
         {
             Location.x = leftBorder;  // 위치 보정
-            Velocity.x *= -0.95f;      // 반사
+            Velocity.x *= -0.7f;      // 반사
         }
-        else if (Location.x > rightBorder && (Location.y > leftHole || Location.y < -leftHole))
+        else if (Location.x > rightBorder && (Location.y > rightHole - 0.025f || Location.y < -rightHole + 0.025f))
         {
             Location.x = rightBorder;
-            Velocity.x *= -0.95f;
+            Velocity.x *= -0.7f;
         }
 
-        if (Location.x < leftBorder - 4 * Radius) {
+        if (Location.x < leftBorder - 3 * Radius) {
             Velocity = (0.0f);
             scoreB++;
             GameManager::Get().AddScore(EPlayer::Player2);
             Sleep(1000);
             return 'B';
         }
-        if (Location.x > rightBorder + 4 * Radius) {
+        if (Location.x > rightBorder + 3 * Radius) {
             Velocity = (0.0f);
             scoreA++;
             GameManager::Get().AddScore(EPlayer::Player1);
@@ -619,12 +620,12 @@ public:
         if (Location.y > topBorder)
         {
             Location.y = topBorder;
-            Velocity.y *= -0.95f;
+            Velocity.y *= -0.7f;
         }
         else if (Location.y < bottomBorder)
         {
             Location.y = bottomBorder;
-            Velocity.y *= -0.95f; // 중력이 없을 때는 완전 반사
+            Velocity.y *= -0.7f;
         }
         return 0;
     }
@@ -785,12 +786,11 @@ public:
             // 아이템 랜덤 뽑기
             EItem newItem = GetRandomItem();
             // 공이 두개이거나 TwoBalls 아이템이 현재 map에 있으면 더 이상 TwoBalls 아이템이 나오지 않음
-            while (bMultipleBalls && newItem == EItem::TwoBalls && !HasTwoBallsInItemList())
+            while ((bMultipleBalls && newItem == EItem::TwoBalls) || (HasTwoBallsInItemList() && newItem == EItem::TwoBalls))
             {
                 newItem = GetRandomItem();
             }
-
-            ItemList[ItemCount] = new UItem(FVector3(RandomFloat(-0.9f, 0.9f), RandomFloat(-0.4f, 0.4f), 0.0f), GetRandomItem());
+            ItemList[ItemCount] = new UItem(FVector3(RandomFloat(-0.9f, 0.9f), RandomFloat(-0.4f, 0.4f), 0.0f), newItem);
             ItemCount++;
         }
     }
@@ -913,6 +913,7 @@ public:
 
     // Cork와 Ball 사이의 충돌 처리
     void ResolveCollision(UBall& Other) {
+
         FVector3 Diff = Location - Other.Location;
         float Distance = sqrt(Diff.x * Diff.x + Diff.y * Diff.y);
         float MinDist = Radius + Other.Radius;
@@ -1318,8 +1319,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     float moveB = 0.03f;
 
     // 플레이어 Cork
-    UCork* CorkA = new UCork(FVector3(-0.875f, 0.0f, 0.0f), 0.07f, 35.0f, 1, &renderer);
-    UCork* CorkB = new UCork(FVector3(0.875f, 0.0f, 0.0f), 0.07f, 35.0f, 2, &renderer);
+    UCork* CorkA = new UCork(FVector3(-0.875f, 0.0f, 0.0f), 0.07f, 30.0f, 1, &renderer);
+    UCork* CorkB = new UCork(FVector3(0.875f, 0.0f, 0.0f), 0.07f, 30.0f, 2, &renderer);
 
     // A의 초기 위치 및 목표 위치 설정
     float initialXA = CorkA->Location.x; // A의 원래 위치
@@ -1412,8 +1413,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             if (GetAsyncKeyState(0x57) & 0x8000 && CorkA->Location.y + moveA < 0.405f) {
                 if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
-                    CorkA->SetLocationY(moveA/2);
-                    CorkA->SetVelocityY(moveA/2);
+                    CorkA->SetLocationY(moveA/3);
+                    CorkA->SetVelocityY(moveA/3);
                 }
                 else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
                     CorkA->SetLocationY(0);
@@ -1426,8 +1427,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
             if (GetAsyncKeyState(0x53) & 0x8000 && CorkA->Location.y - moveA > -0.405f) {
                 if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
-                    CorkA->SetLocationY(-moveA/2);
-                    CorkA->SetVelocityY(-moveA/2);
+                    CorkA->SetLocationY(-moveA/3);
+                    CorkA->SetVelocityY(-moveA/3);
                 }
                 else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
                     CorkA->SetLocationY(0);
@@ -1441,8 +1442,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
             if (GetAsyncKeyState(VK_UP) & 0x8000 && CorkB->Location.y + moveB < 0.405f) {
                 if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
-                    CorkB->SetLocationY(moveB/2);
-                    CorkB->SetVelocityY(moveB/2);
+                    CorkB->SetLocationY(moveB/3);
+                    CorkB->SetVelocityY(moveB/3);
                 }
                 else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
                     CorkB->SetLocationY(0);
@@ -1456,8 +1457,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
             if (GetAsyncKeyState(VK_DOWN) & 0x8000 && CorkB->Location.y - moveB > -0.405f) {
                 if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
-                    CorkB->SetLocationY(-moveB/2);
-                    CorkB->SetVelocityY(-moveB/2);
+                    CorkB->SetLocationY(-moveB/3);
+                    CorkB->SetVelocityY(-moveB/3);
                 }
                 else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
                     CorkB->SetLocationY(0);
@@ -1550,9 +1551,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         #pragma region Rendering
         if (HUD->GetCurrentState() != EUIState::MAIN)
         {
-            BallManager.RenderBalls();
-            ItemManager.RenderItems();
-
             //가로벽 렌더링
             renderer.DeviceContext->PSSetShaderResources(0, 1, &renderer.WallTexture);
             renderer.UpdateConstant(offsetHorizontal, 1.0f);
@@ -1574,12 +1572,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             renderer.RenderPrimitive(vertexBufferHoleA, numVerticeCube);
             renderer.UpdateConstant(offsetHoleB, 1.0f);
             renderer.RenderPrimitive(vertexBufferHoleB, numVerticeCube);
+            
+            //아이템 렌더링
+            ItemManager.RenderItems();
 
             //플레이어A 렌더링
             CorkA->Render();
 
             //플레이어B 렌더링
             CorkB->Render();
+
+            BallManager.RenderBalls();
 
             
         }
