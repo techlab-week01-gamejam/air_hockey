@@ -34,58 +34,59 @@ struct FVertexSimple
 {
     float x, y, z;    // Position
     float r, g, b, a; // Color
+    float u,v;
 };
 
 // 벽에 사용할 정육면체
 FVertexSimple cube_vertices[] =
 {
     // Front face (Z+)
-    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-
-    // Back face (Z-)
-    { -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-
-    // Left face (X-)
-    { -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-
-    // Right face (X+)
-    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-
-    // Top face (Y+)
-    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-
-    // Bottom face (Y-)
-    { -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
-    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f },
+    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
+    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f },
+    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
+    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f},
+    {  0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
+    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 8.0f },
+                                                  
+    // Back face (Z-)                             
+    { -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
+    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f },
+    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
+    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
+    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
+    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 8.0f },
+                                                  
+    // Left face (X-)                             
+    { -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
+    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f },
+    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
+    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
+    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
+    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 8.0f },
+                                                  
+    // Right face (X+)                            
+    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
+    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f },
+    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
+    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
+    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
+    {  0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 8.0f },
+                                                  
+    // Top face (Y+)                              
+    { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
+    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f },
+    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
+    { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
+    {  0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
+    {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 8.0f },
+                                                  
+    // Bottom face (Y-)                           
+    { -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
+    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f },
+    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
+    { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
+    {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
+    {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 8.0f },
 };
 
 
@@ -202,6 +203,14 @@ public:
     ID3D11InputLayout* SimpleInputLayout;
     unsigned int Stride;
 
+    ID3D11SamplerState* SimpleSamplerState = nullptr;
+    
+    ID3D11ShaderResourceView* PrimaryTexture = nullptr;
+
+    ID3D11ShaderResourceView* CorkTexture = nullptr;
+    ID3D11ShaderResourceView* BallTexture = nullptr;
+    ID3D11ShaderResourceView* WallTexture = nullptr;
+    ID3D11ShaderResourceView* HoleTexture = nullptr;
 
 public:
     // 렌더러 초기화 함수
@@ -217,6 +226,32 @@ public:
         CreateRasterizerState();
 
         // 깊이 스텐실 버퍼 및 블렌드 상태는 이 코드에서는 다루지 않음
+
+        // 샘플러 생성
+        CreateSamplerState();
+        
+        TextureLoader::Get().g_pd3dDevice = Device;
+
+        // Texture Preload
+        TextureLoader::Get().LoadTextureFromFile("./textures/sample.jpg", &PrimaryTexture, "sample"); // 기본
+        TextureLoader::Get().LoadTextureFromFile("./textures/cork.jpg", &CorkTexture, "cork"); // 콕
+        TextureLoader::Get().LoadTextureFromFile("./textures/ball.jpg", &BallTexture, "ball"); // 볼
+        TextureLoader::Get().LoadTextureFromFile("./textures/wall.jpg", &WallTexture, "wall"); // 벽
+        TextureLoader::Get().LoadTextureFromFile("./textures/hole.jpg", &HoleTexture, "hole"); // 홀
+    }
+
+    void CreateSamplerState()
+    {
+        D3D11_SAMPLER_DESC samplerDesc = {};
+        samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+        samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+        samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+        samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+        samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+        samplerDesc.MinLOD = 0;
+        samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+        Device->CreateSamplerState(&samplerDesc, &SimpleSamplerState);
     }
 
     // Direct3D 장치 및 스왑 체인을 생성하는 함수
@@ -285,7 +320,7 @@ public:
 
         // 렌더 타겟 뷰 생성
         D3D11_RENDER_TARGET_VIEW_DESC framebufferRTVdesc = {};
-        framebufferRTVdesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB; // 색상 포맷
+        framebufferRTVdesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // 색상 포맷
         framebufferRTVdesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D; // 2D 텍스처
 
         Device->CreateRenderTargetView(FrameBuffer, &framebufferRTVdesc, &FrameBufferRTV);
@@ -362,6 +397,7 @@ public:
         {
             { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
             { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+            { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0 },
         };
 
         Device->CreateInputLayout(layout, ARRAYSIZE(layout), vertexshaderCSO->GetBufferPointer(), vertexshaderCSO->GetBufferSize(), &SimpleInputLayout);
@@ -417,6 +453,10 @@ public:
         {
             DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
         }
+
+        // 텍스처와 샘플러를 픽셀 쉐이더에 바인딩 (register t0, s0에 대응)
+        DeviceContext->PSSetShaderResources(0, 1, &PrimaryTexture);
+        DeviceContext->PSSetSamplers(0, 1, &SimpleSamplerState);
     }
 
     void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
@@ -614,13 +654,98 @@ public:
         if (nullptr == vertexBuffer)
             return;
 
+        renderer->DeviceContext->PSSetShaderResources(0, 1, &renderer->BallTexture);
         renderer->UpdateConstant(Location, Radius);
         renderer->RenderPrimitive(vertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
     }
-
-
 };
 
+class UCork
+{
+public:
+    FVector3 Location;  // 콕의 위치
+    FVector3 Velocity;  // 콕의 속도
+    float Radius;       // 콕의 반지름
+    float Mass;         // 콕의 질량
+    int PlayerFlag;     // 콕이 어떤 플레이어인지 나타내는 플래그
+    ID3D11Buffer* VertexBuffer;  // 버텍스 버퍼
+    URenderer* Renderer;
+    ManagedTexture Texture;
+
+    UCork(FVector3 Location, float Radius, float Mass, int PlayerFlag, URenderer* renderer) : Location(Location), Radius(Radius), Mass(Mass), PlayerFlag(PlayerFlag)
+    {
+        Renderer = renderer;
+        VertexBuffer = Renderer->CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
+        Texture = TextureLoader::Get().GetTexture("sample2");
+    }
+
+    void SetLocationY(float deltaY)
+    {
+        Location.y += deltaY;
+    }
+
+    void SetVelocityY(float deltaY)
+    {
+        Velocity.y = deltaY;
+    }
+
+    void SetLocationX(float deltaX)
+    {
+        Location.x += deltaX;
+    }
+
+    void SetVelocityX(float deltaX)
+    {
+        Velocity.x = deltaX;
+    }
+
+    void SetInit(FVector3 location)
+    {
+        Location = location;
+        Velocity = (0.0f);
+    }
+
+    void Render()
+    {
+        if (nullptr == VertexBuffer)
+            return;
+
+        Renderer->DeviceContext->PSSetShaderResources(0, 1, &Renderer->CorkTexture);
+        Renderer->UpdateConstant(Location, Radius);
+        Renderer->RenderPrimitive(VertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
+    }
+
+    // Cork와 Ball 사이의 충돌 처리
+    void ResolveCollision(UBall& Other)
+    {
+        FVector3 Diff = Location - Other.Location;
+        float Distance = sqrt(Diff.x * Diff.x + Diff.y * Diff.y);
+        float MinDist = Radius + Other.Radius;
+
+        if (Distance < MinDist) // 충돌 발생
+        {
+            FVector3 Normal = (Distance > 1e-6f) ? (Diff / Distance) : FVector3(0, 0, 0);
+            FVector3 RelativeVelocity = Velocity - Other.Velocity;
+            float Speed = (RelativeVelocity.x * Normal.x + RelativeVelocity.y * Normal.y);
+
+            // 겹쳐 있을 때도 충돌 처리를 강제 실행
+            if (Speed > 0 && Distance >= MinDist) return;
+
+            float Impulse = 2.0f * Speed / (Mass + Other.Mass);
+            Other.Velocity += Normal * Impulse * Mass;
+
+            // 위치 보정 추가 (공이 너무 겹치는 문제 방지)
+            float Overlap = MinDist - Distance;
+            FVector3 Correction = Normal * (Overlap / 2.0f);
+
+            Other.Location -= Correction;
+
+            // 공에게 마지막으로 공격한 플레이어가 누구인지 전달
+            Other.SetPlayerFlag(PlayerFlag);
+
+        }
+    }
+};
 
 enum class EItem
 {
@@ -1205,7 +1330,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         vertical[i] = cube_vertices[i];
         vertical[i].x *= 0.1f;
         vertical[i].y *= 1.0f;
-
     }
     ID3D11Buffer* vertexBufferHorizontal = renderer.CreateVertexBuffer(horizontal, sizeof(horizontal));
     ID3D11Buffer* vertexBufferVertical = renderer.CreateVertexBuffer(vertical, sizeof(vertical));
@@ -1497,6 +1621,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             ItemManager.RenderItems();
 
             //가로벽 렌더링
+            renderer.DeviceContext->PSSetShaderResources(0, 1, &renderer.WallTexture);
             renderer.UpdateConstant(offsetHorizontal, 1.0f);
             renderer.RenderPrimitive(vertexBufferHorizontal, numVerticeCube);
             offsetHorizontal.y *= -1.0f; //offset 변경
@@ -1511,6 +1636,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             renderer.RenderPrimitive(vertexBufferVertical, numVerticeCube);
 
             //홀 렌더링
+            renderer.DeviceContext->PSSetShaderResources(0, 1, &renderer.HoleTexture);
             renderer.UpdateConstant(offsetHoleA, 1.0f);
             renderer.RenderPrimitive(vertexBufferHoleA, numVerticeCube);
             renderer.UpdateConstant(offsetHoleB, 1.0f);
