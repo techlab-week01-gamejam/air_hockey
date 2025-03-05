@@ -24,7 +24,8 @@ private:
 	std::wstring StringToWString(const std::string& str);
 
 	static TextureManager* Instance;
-	ID3D11Device* Device = nullptr;
-	ID3D11DeviceContext* DeviceContext = nullptr;
+	ID3D11Device* Device;
+	ID3D11DeviceContext* DeviceContext;
 	std::unordered_map<std::string, ID3D11ShaderResourceView*> TextureCache;
+	std::string GetTexturePath();
 };

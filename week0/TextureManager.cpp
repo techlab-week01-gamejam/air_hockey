@@ -16,18 +16,29 @@ void TextureManager::Initiallize(ID3D11Device* device, ID3D11DeviceContext* cont
 	DeviceContext = context;
 }
 
+TextureManager::TextureManager()
+	: Device(nullptr), DeviceContext(nullptr) {
+}
+
 TextureManager::~TextureManager() {
 	Release();
+
+	if (nullptr != Instance) {
+		delete Instance;
+		Instance = nullptr;
+	}
 }
 
 ID3D11ShaderResourceView* TextureManager::LoadTexture(const std::string& filename) {
-	if (TextureCache.end() != TextureCache.find(filename)) {
-		return TextureCache[filename];
+	std::string fullPath = GetTexturePath() + "\\" + filename;
+
+	if (TextureCache.end() != TextureCache.find(fullPath)) {
+		return TextureCache[fullPath];
 	}
 
 	ID3D11ShaderResourceView* textureView = nullptr;
-	if (SUCCEEDED(LoadTextureFromFile(filename, &textureView))) {
-		TextureCache[filename] = textureView;
+	if (SUCCEEDED(LoadTextureFromFile(fullPath, &textureView))) {
+		TextureCache[fullPath] = textureView;
 	}
 
 	return textureView;
@@ -97,4 +108,13 @@ std::wstring TextureManager::StringToWString(const std::string& str) {
     std::wstring wstr(size_needed, 0);
     MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, &wstr[0], size_needed);
     return wstr;
+}
+
+std::string TextureManager::GetTexturePath() {
+	char path[MAX_PATH];
+	GetModuleFileNameA(nullptr, path, MAX_PATH);
+	std::string exePath(path);
+	std::string currentDir = exePath.substr(0, exePath.find_last_of("\\/"));
+	std::string resourcePath = currentDir + "\\..\\..\\resource\\texture";
+	return resourcePath;
 }

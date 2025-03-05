@@ -15,72 +15,20 @@
 #include "imGui/imgui_impl_win32.h"
 
 #include "SoundManager.h"
+#include "TextureManager.h"
+#include "SpriteAnimationManager.h" 
+#include "vector3.h"
+
+#include "DebugLog.h"
 
 bool bUseGravity = false; // 중력 적용 여부 (기본 OFF)
 float Gravity = -0.001f; // 중력 가속도 값 (음수 값: 아래 방향)
+int colliisionCount = 0; // 충돌 횟수
 
 // 1. Define the triangle vertices
 struct FVertexSimple {
     float x, y, z;    // Position
     float r, g, b, a; // Color
-};
-
-// Structure for a 3D vector
-struct FVector3 {
-    float x, y, z;
-    FVector3(float _x = 0, float _y = 0, float _z = 0) : x(_x), y(_y), z(_z) {}
-
-    // 벡터 덧셈 연산자
-    FVector3 operator+(const FVector3& Other) const {
-        return FVector3(x + Other.x, y + Other.y, z + Other.z);
-    }
-
-    // 벡터 뺄셈 연산자
-    FVector3 operator-(const FVector3& Other) const {
-        return FVector3(x - Other.x, y - Other.y, z - Other.z);
-    }
-
-    // 벡터 스칼라 곱 연산자 (오른쪽 스칼라 곱)
-    FVector3 operator*(float Scalar) const {
-        return FVector3(x * Scalar, y * Scalar, z * Scalar);
-    }
-
-    // 벡터 스칼라 나누기 연산자
-    FVector3 operator/(float Scalar) const {
-        return FVector3(x / Scalar, y / Scalar, z / Scalar);
-    }
-
-    // 벡터 덧셈 후 대입 연산자
-    FVector3& operator+=(const FVector3& Other) {
-        x += Other.x;
-        y += Other.y;
-        z += Other.z;
-        return *this;
-    }
-
-    // 벡터 뺄셈 후 대입 연산자
-    FVector3& operator-=(const FVector3& Other) {
-        x -= Other.x;
-        y -= Other.y;
-        z -= Other.z;
-        return *this;
-    }
-
-    // 벡터 스칼라 곱 후 대입 연산자
-    FVector3& operator*=(float Scalar) {
-        x *= Scalar;
-        y *= Scalar;
-        z *= Scalar;
-        return *this;
-    }
-
-    // 벡터 스칼라 나누기 후 대입 연산자
-    FVector3& operator/=(float Scalar) {
-        x /= Scalar;
-        y /= Scalar;
-        z /= Scalar;
-        return *this;
-    }
 };
 
 #include "Sphere.h"
@@ -97,6 +45,7 @@ public:
     ID3D11RenderTargetView* FrameBufferRTV = nullptr; // 텍스처를 렌더 타겟으로 사용하는 뷰
     ID3D11RasterizerState* RasterizerState = nullptr; // 래스터라이저 상태(컬링, 채우기 모드 등 정의)
     ID3D11Buffer* ConstantBuffer = nullptr; // 쉐이더에 데이터를 전달하기 위한 상수 버퍼
+	ID3D11BlendState* AlphaBlendState = nullptr; // 알파 블렌딩 상태
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f }; // 화면을 초기화(clear)할 때 사용할 색상 (RGBA)
     D3D11_VIEWPORT ViewportInfo; // 렌더링 영역을 정의하는 뷰포트 정보
@@ -119,7 +68,8 @@ public:
         // 래스터라이저 상태 생성
         CreateRasterizerState();
 
-        // 깊이 스텐실 버퍼 및 블렌드 상태는 이 코드에서는 다루지 않음
+        // 알파 블렌드 스테이트 생성
+        CreateBlendState();
     }
 
     // Direct3D 장치 및 스왑 체인을 생성하는 함수
@@ -226,6 +176,11 @@ public:
 
         ReleaseFrameBuffer();
         ReleaseDeviceAndSwapChain();
+
+		if (AlphaBlendState) {
+			AlphaBlendState->Release();
+			AlphaBlendState = nullptr;
+		}
     }
 
     // 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
@@ -285,7 +240,7 @@ public:
         DeviceContext->RSSetState(RasterizerState);
 
         DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
-        DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+        DeviceContext->OMSetBlendState(AlphaBlendState, nullptr, 0xffffffff);
     }
 
     void PrepareShader() {
@@ -363,6 +318,31 @@ public:
             DeviceContext->Unmap(ConstantBuffer, 0);
         }
     }
+
+    void CreateBlendState() {
+        D3D11_BLEND_DESC blendDesc = {};
+        ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
+
+        // 모든 렌더 타깃에 동일한 블렌딩 옵션을 적용
+        blendDesc.AlphaToCoverageEnable = FALSE;
+        blendDesc.IndependentBlendEnable = FALSE;
+        blendDesc.RenderTarget[0].BlendEnable = TRUE;
+
+        // 소스 알파와 역소스 알파를 이용해 투명도를 계산
+        blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+        blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+        blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+
+        // 알파 채널에 대해서는 별도의 연산 설정
+        blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+        blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+        blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+
+        // RGBA 모두 쓰기
+        blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+        HRESULT hr = Device->CreateBlendState(&blendDesc, &AlphaBlendState);
+    }
 };
 
 class UBall {
@@ -436,6 +416,8 @@ public:
 
             SoundMgr->PlaySFX("Hit");
 
+            AddDebugLog("Collision Detected: " + std::to_string(++colliisionCount));
+
             if (Speed > 0) return; // 이미 멀어지고 있다면 처리하지 않음
 
             float Impulse = 2.0f * Speed / (Mass + Other.Mass);
@@ -448,6 +430,10 @@ public:
 
             Location += Correction;
             Other.Location -= Correction;
+
+            // 애니메이션 실행 (충돌 접점에서)
+            FVector3 CollisionPoint = (Location + Other.Location) * 0.5f;
+            SpriteAnimationManager::GetInstance()->PlayAnimation("Hit1", CollisionPoint, 0.2f);
         }
     }
 
@@ -659,6 +645,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     LARGE_INTEGER startTime, endTime;
     double elapsedTime = 0.0;
+    double deltaTime = 0.0f;
 
     /* SoundManager Init */
     SoundManager* SoundMgr = SoundManager::GetInstance();
@@ -668,6 +655,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     SoundMgr->LoadSound("Hit", "hit.mp3");
+
+    /* TextureManager 초기화*/
+    TextureManager::GetInstance()->Initiallize(renderer.Device, renderer.DeviceContext);
+
+	/* SpriteAnimationManager 초기화 */ 
+    SpriteAnimationManager::GetInstance()->Initialize(renderer.Device);
+
+    // 애니메이션 등록
+	SpriteAnimationManager::GetInstance()->RegisterAnimation("Hit1", "hit_1.png", 1, 5, 0.05f, renderer.Device);
+    SpriteAnimationManager::GetInstance()->RegisterAnimation("Hit2", "hit_2.png", 1, 4, 0.05f, renderer.Device);
 
     // Main Loop (Quit Message가 들어오기 전까지 아래 Loop를 무한히 실행하게 됨)
     while (bIsExit == false) {
@@ -697,6 +694,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
 
         BallManager.UpdateBalls();
+        SpriteAnimationManager::GetInstance()->Update(deltaTime);
+		SoundManager::GetInstance()->Update();
 
 
         // 준비 작업
@@ -704,6 +703,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         renderer.PrepareShader();
 
         BallManager.RenderBalls();
+        SpriteAnimationManager::GetInstance()->Render(renderer.DeviceContext);
 
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
@@ -739,6 +739,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         ImGui::End();
 
+        ShowDebugWindow();
+
         ImGui::Render();
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
@@ -753,6 +755,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             // 한 프레임이 소요된 시간 계산 (밀리초 단위로 변환)
             elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
+			deltaTime = elapsedTime / 1000.0; // 초 단위로 변환
 
         } while (elapsedTime < targetFrameTime);
     }

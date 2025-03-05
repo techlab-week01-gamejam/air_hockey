@@ -9,6 +9,11 @@ SoundManager::SoundManager()
 
 SoundManager::~SoundManager() {
 	Release();
+
+	if (nullptr != Instance) {
+		delete Instance;
+		Instance = nullptr;
+	}
 }
 
 SoundManager* SoundManager::GetInstance() {
@@ -59,9 +64,9 @@ void SoundManager::Release() {
 	}
 }
 
-/* 실행 파일 경로 반환 */
+/* sound 폴더 경로 반환 */
 /* 모든 효과음, BGM과 같은 음악 파일은 recource/sound 폴더에 넣어주세요! */
-std::string SoundManager::GetExecutablePath() {
+std::string SoundManager::GetSoundPath() {
 	char path[MAX_PATH];
 	GetModuleFileNameA(nullptr, path, MAX_PATH);
 	std::string exePath(path);
@@ -69,7 +74,7 @@ std::string SoundManager::GetExecutablePath() {
 	// 실행 파일이 있는 디렉터리 가져오기
 	std::string currentDir = exePath.substr(0, exePath.find_last_of("\\/"));
 
-	// 한 단계 상위 폴더로 이동 후 "resource/sound/" 추가
+	// 두 단계 상위 폴더로 이동 후 "resource/sound/" 추가
 	std::string resourcePath = currentDir + "\\..\\..\\resource\\sound";
 
 	return resourcePath;
@@ -80,7 +85,7 @@ void SoundManager::LoadSound(const std::string& SoundName, const std::string& Fi
 		return; // 이미 로드된 사운드
 	}
 
-	std::string FullPath = GetExecutablePath() + "\\" + FilePath;
+	std::string FullPath = GetSoundPath() + "\\" + FilePath;
 
 	FMOD::Sound* NewSound = nullptr;
 	FMOD_MODE Mode = Loop ? FMOD_LOOP_NORMAL : FMOD_DEFAULT;
@@ -110,7 +115,7 @@ void SoundManager::PlayBGM(const std::string& BGMName, float Volume) {
 
 	if (FMOD_OK == FMODSystem->playSound(CurrentBGM, nullptr, false, &BGMChannel)) {
 		BGMChannel->setVolume(Volume);
-		std::cout << "[Log] BGM 재성: " << BGMName << std::endl;
+		std::cout << "[Log] BGM 재생: " << BGMName << std::endl;
 	}
 }
 
@@ -132,6 +137,12 @@ void SoundManager::PlaySFX(const std::string& SFXName, float Volume) {
 	if (FMOD_OK == FMODSystem->playSound(iter->second, nullptr, false, &Channel)) {
 		Channel->setVolume(Volume);
 		std::cout << "[Log] 효과음 재생: " << SFXName << std::endl;
+	}
+}
+
+void SoundManager::Update() {
+	if (nullptr != FMODSystem) {
+		FMODSystem->update();
 	}
 }
 

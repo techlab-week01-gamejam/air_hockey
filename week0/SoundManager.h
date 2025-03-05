@@ -27,12 +27,14 @@ public:
     /* 효과음 재생 */
     void PlaySFX(const std::string& SFXName, float Volume = 1.0f);
 
+    void Update();
+
 private:
     SoundManager();
     ~SoundManager();
 
-    /* 실행 파일이 있는 경로를 반환 */
-    std::string GetExecutablePath();
+    /* sound 폴더 경로를 반환 */
+    std::string GetSoundPath();
 
     /* 싱글톤 인스턴스 */
     static SoundManager* Instance;
