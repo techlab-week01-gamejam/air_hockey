@@ -212,6 +212,9 @@ public:
     ID3D11ShaderResourceView* BallTexture = nullptr;
     ID3D11ShaderResourceView* WallTexture = nullptr;
     ID3D11ShaderResourceView* HoleTexture = nullptr;
+    ID3D11ShaderResourceView* NormalItemTexture = nullptr;
+    ID3D11ShaderResourceView* BuffItemTexture = nullptr;
+    ID3D11ShaderResourceView* DeBuffItemTexture = nullptr;
 
 public:
     // 렌더러 초기화 함수
@@ -240,6 +243,9 @@ public:
         TextureLoader::Get().LoadTextureFromFile("./textures/ball.png", &BallTexture, "ball"); // 볼
         TextureLoader::Get().LoadTextureFromFile("./textures/wall.jpg", &WallTexture, "wall"); // 벽
         TextureLoader::Get().LoadTextureFromFile("./textures/hole.jpg", &HoleTexture, "hole"); // 홀
+        TextureLoader::Get().LoadTextureFromFile("./textures/normal-item.png", &NormalItemTexture, "normalItem"); // 중립 아이템
+        TextureLoader::Get().LoadTextureFromFile("./textures/buff-item.jpg", &BuffItemTexture, "buffItem"); // 버프 아이템
+        TextureLoader::Get().LoadTextureFromFile("./textures/debuff-item.jpg", &DeBuffItemTexture, "debuffItem"); // 디버프 아이템
     }
 
     void CreateSamplerState()
@@ -689,6 +695,13 @@ public:
         if (nullptr == vertexBuffer)
             return;
 
+        if (ItemType == EItem::TwoBalls) {
+            renderer->DeviceContext->PSSetShaderResources(0, 1, &renderer->NormalItemTexture);
+        }
+        else if (ItemType == EItem::Slow || ItemType == EItem::Stop) {
+            renderer->DeviceContext->PSSetShaderResources(0, 1, &renderer->DeBuffItemTexture);
+        }
+
         renderer->UpdateConstant(Location, 0.04f);
         renderer->RenderPrimitive(vertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
     }
@@ -755,14 +768,24 @@ public:
         ItemList = new UItem * [Capacity];
     }
 
+    bool HasTwoBallsInItemList() {
+        for (int i = 0; i < ItemCount; i++) {
+            if (ItemList[i]->ItemType == EItem::TwoBalls) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     void AddItem()
     {
         if (ItemCount <= Capacity)
         {
             // 아이템 랜덤 뽑기
             EItem newItem = GetRandomItem();
-            // 공이 두개이면 더 이상 TwoBalls 아이템이 나오지 않음
-            while (bMultipleBalls && newItem == EItem::TwoBalls)
+            // 공이 두개이거나 TwoBalls 아이템이 현재 map에 있으면 더 이상 TwoBalls 아이템이 나오지 않음
+            while (bMultipleBalls && newItem == EItem::TwoBalls && !HasTwoBallsInItemList())
             {
                 newItem = GetRandomItem();
             }
@@ -1023,15 +1046,6 @@ public:
     // 모든 공 이동
     void UpdateBalls(UCork* CorkA, UCork* CorkB)
     {
-        if (bUseGravity)
-        {
-            for (int i = 0; i < BallCount; i++)
-            {
-                float acceleration = Gravity / BallList[i]->Mass; // 중력 가속도 = Gravity / Mass
-                BallList[i]->Velocity.y += acceleration; // 질량에 비례한 중력 가속도 적용
-            }
-        }
-
         for (int i = 0; i < BallCount; i++)
         {
             BallList[i]->Move();
