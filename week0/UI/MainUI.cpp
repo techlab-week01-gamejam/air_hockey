@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "MainUI.h"
 
 void MainUI::Render()
@@ -7,38 +7,61 @@ void MainUI::Render()
     ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
     ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
 
-    // À©µµ¿ì ÇÃ·¡±×¸¦ ÀÌ¿ëÇØ Á¦¸ñ Ç¥½ÃÁÙ, ÀÌµ¿, ¸®»çÀÌÁî µîÀ» ºñÈ°¼ºÈ­
+    // ìœˆë„ìš° í”Œë˜ê·¸ë¥¼ ì´ìš©í•´ ì œëª© í‘œì‹œì¤„, ì´ë™, ë¦¬ì‚¬ì´ì¦ˆ ë“±ì„ ë¹„í™œì„±í™”
     ImGuiWindowFlags window_flags = 
         ImGuiWindowFlags_NoTitleBar |
         ImGuiWindowFlags_NoResize |
         ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoScrollWithMouse |
         ImGuiWindowFlags_NoCollapse;
 
     ImGui::Begin("Main Window", nullptr, window_flags);
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f); // µÕ±Ù ¸ğ¼­¸® ¹İ°æÀ» 12·Î ¼³Á¤
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f); // ë‘¥ê·¼ ëª¨ì„œë¦¬ ë°˜ê²½ì„ 12ë¡œ ì„¤ì •
 
-    // È­¸é Å©±â Á¤º¸ È¹µæ
+    // í™”ë©´ í¬ê¸° ì •ë³´ íšë“
     ImGuiIO& io = ImGui::GetIO();
     ImVec2 windowSize = io.DisplaySize;
 
-    //// ÀÌ¹ÌÁö ¼³Á¤ : Universe
-    //ImGui::SetCursorPos(ImVec2(0, 0));
-    //ManagedTexture universe = TextureLoader::Get().GetTexture("universe");
-    //ImGui::Image((ImTextureID)(intptr_t)universe.texture, ImVec2(windowSize.x, windowSize.y));
+    // ì´ë¯¸ì§€ ì„¤ì • : ì›ì¥ë‹˜ - ê¸°ë³¸
+    ImGui::SetCursorPos(ImVec2(0, 0));
+    ManagedTexture king = TextureLoader::Get().GetTexture("king");
+    ManagedTexture kingBlack = TextureLoader::Get().GetTexture("king-black");
+    ImVec2 imageSize(king.width, king.height);
 
-    // ÀÌ¹ÌÁö ¼³Á¤ : JUNGLE
+    // ë³´ì´ì§€ ì•ŠëŠ” ë²„íŠ¼ ìƒì„±
+    ImGui::InvisibleButton("ImageArea", imageSize);
+    // hover ìƒíƒœì— ë”°ë¼ ë Œë”ë§í•  í…ìŠ¤ì²˜ë¥¼ ì„ íƒí•©ë‹ˆë‹¤.
+    ManagedTexture displayTexture = ImGui::IsItemHovered() ? kingBlack : king;
+    ImGui::SetCursorPos(ImGui::GetItemRectMin()); // ë²„íŠ¼ ì˜ì—­ê³¼ ë™ì¼í•œ ìœ„ì¹˜ì—ì„œ ì´ë¯¸ì§€ ì¶œë ¥
+    ImGui::Image((ImTextureID)(intptr_t)displayTexture.texture, imageSize);
+
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::PushFont(FontManager::Get().GetFont("noto50"));
+        ImGui::SetCursorPos(ImVec2(imageSize.x, 140));
+        ImGui::Text("%s", u8"  ã„´ì—¬ëŸ¬ë¶„ì´ ë‚¨ìŠµë‹ˆë‹¤.ã…ã…");
+        ImGui::PopFont();
+    }
+
+    // ì´ë¯¸ì§€ ì„¤ì • : JUNGLE
     ImGui::SetCursorPos(ImVec2(0, windowSize.y - 430));
     ManagedTexture jungle = TextureLoader::Get().GetTexture("jungle");
     ImGui::Image((ImTextureID)(intptr_t)jungle.texture, ImVec2(windowSize.x, jungle.height * 0.5f));
 
-    // ÀÌ¹ÌÁö ¼³Á¤ : HOCKEY PLAYER
+    // ì´ë¯¸ì§€ ì„¤ì • : HOCKEY PLAYER
     ImGui::SetCursorPos(ImVec2(windowSize.x - 480, windowSize.y - 480));
     ManagedTexture main = TextureLoader::Get().GetTexture("main");
     ImGui::Image((ImTextureID)(intptr_t)main.texture, ImVec2(480, 480));
 
 
-    // ¸ŞÀÎ Å¸ÀÌÆ²
+    // ëŒ€ì‚¬ 1
+    ImGui::PushFont(FontManager::Get().GetFont("noto50"));
+    ImGui::SetCursorPos(ImVec2(imageSize.x, 100));
+    ImGui::Text("%s", u8"ì´ë ‡ê²Œ êµìœ¡í•˜ë©´ ë­ê°€ ë‚¨ë‚˜ìš”?");
+    ImGui::PopFont();
+
+    // ë©”ì¸ íƒ€ì´í‹€
     const char* title = "AIR HOCKEY";
     ImGui::PushFont(FontManager::Get().GetFont("chewy120"));
     ImVec2 textSize = ImGui::CalcTextSize(title);
@@ -46,27 +69,27 @@ void MainUI::Render()
     ImGui::Text("%s", title);
     ImGui::PopFont();
 
-    // ¹öÆ° Å©±â¿Í ¹öÆ° »çÀÌÀÇ ÆĞµù °ª ¼³Á¤
+    // ë²„íŠ¼ í¬ê¸°ì™€ ë²„íŠ¼ ì‚¬ì´ì˜ íŒ¨ë”© ê°’ ì„¤ì •
     ImVec2 buttonSize = ImVec2(250, 120);
     float padding = 40.0f;
 
-    // µÎ ¹öÆ°°ú ÆĞµùÀ» Æ÷ÇÔÇÑ ÀüÃ¼ ³ôÀÌ °è»ê
+    // ë‘ ë²„íŠ¼ê³¼ íŒ¨ë”©ì„ í¬í•¨í•œ ì „ì²´ ë†’ì´ ê³„ì‚°
     float totalButtonsHeight = buttonSize.y * 2 + padding * 4;
 
-    // Ã¹ ¹øÂ° ¹öÆ°ÀÇ Y ÁÂÇ¥´Â Ã¢ ÇÏ´Ü¿¡¼­ ÀüÃ¼ ¹öÆ° ³ôÀÌ¸¦ »« °ªÀ¸·Î ¼³Á¤
+    // ì²« ë²ˆì§¸ ë²„íŠ¼ì˜ Y ì¢Œí‘œëŠ” ì°½ í•˜ë‹¨ì—ì„œ ì „ì²´ ë²„íŠ¼ ë†’ì´ë¥¼ ëº€ ê°’ìœ¼ë¡œ ì„¤ì •
     float firstButtonY = windowSize.y - totalButtonsHeight;
     ImVec2 button1Pos = ImVec2((windowSize.x - 480) * 0.5f - buttonSize.x * 0.5f, firstButtonY);
 
     ImGui::PushFont(FontManager::Get().GetFont("chewy72"));
-    // Ã¹ ¹øÂ° ¹öÆ° »ı¼º
+    // ì²« ë²ˆì§¸ ë²„íŠ¼ ìƒì„±
     ImGui::SetCursorPos(button1Pos);
     if (CreateButton("PLAY"))
     {
-        // Button 1 Å¬¸¯ ½Ã Ã³¸®
+        // Button 1 í´ë¦­ ì‹œ ì²˜ë¦¬
         manager->ReplaceUI(UIState::GAME);
     }
 
-    // µÎ ¹øÂ° ¹öÆ°Àº Ã¹ ¹øÂ° ¹öÆ° ¹Ù·Î ¾Æ·¡¿¡ ÆĞµùÀ» ´õÇÑ À§Ä¡¿¡ »ı¼º
+    // ë‘ ë²ˆì§¸ ë²„íŠ¼ì€ ì²« ë²ˆì§¸ ë²„íŠ¼ ë°”ë¡œ ì•„ë˜ì— íŒ¨ë”©ì„ ë”í•œ ìœ„ì¹˜ì— ìƒì„±
     float secondButtonY = firstButtonY + buttonSize.y + padding;
     ImVec2 button2Pos = ImVec2((windowSize.x - 480) * 0.5f - buttonSize.x * 0.5f, secondButtonY);
 

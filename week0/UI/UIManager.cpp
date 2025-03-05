@@ -94,6 +94,7 @@ void UIManager::PrepareFonts()
     FontManager::Get().LoadFont("fonts/Chewy-Regular.ttf", 72.0f, "chewy72");
     FontManager::Get().LoadFont("fonts/Chewy-Regular.ttf", 84.0f, "chewy84");
     FontManager::Get().LoadFont("fonts/Chewy-Regular.ttf", 120.0f, "chewy120");
+    FontManager::Get().LoadFont("fonts/Noto.ttf", 50.0f, "noto50", ImGui::GetIO().Fonts->GetGlyphRangesKorean());
 }
 
 void UIManager::PrepareTexture()
@@ -104,6 +105,9 @@ void UIManager::PrepareTexture()
     ID3D11ShaderResourceView* jungleTexture;
     TextureLoader::Get().LoadTextureFromFile("./textures/jungle.png", &jungleTexture, "jungle");
 
-    ID3D11ShaderResourceView* universeTexture;
-    TextureLoader::Get().LoadTextureFromFile("./textures/background.jpg", &universeTexture, "universe");
+    ID3D11ShaderResourceView* king1Texture;
+    TextureLoader::Get().LoadTextureFromFile("./textures/king.png", &king1Texture, "king");
+
+    ID3D11ShaderResourceView* king2Texture;
+    TextureLoader::Get().LoadTextureFromFile("./textures/king-black.png", &king2Texture, "king-black");
 }

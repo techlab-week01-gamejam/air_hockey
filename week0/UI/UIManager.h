@@ -40,16 +40,18 @@ public:
 	}
 
 	// 폰트를 로드하여 내부 맵에 저장하는 함수
-	ImFont* LoadFont(const char* filename, float sizePixel, const std::string& fontName)
+	ImFont* LoadFont(const char* filename, float sizePixel, const std::string& fontName, const ImWchar* fontGlyph = ImGui::GetIO().Fonts->GetGlyphRangesDefault())
 	{
 		ImFont* font = ImGui::GetIO().Fonts->AddFontFromFileTTF(
-			filename, sizePixel, nullptr, ImGui::GetIO().Fonts->GetGlyphRangesDefault());
+			filename, sizePixel, nullptr, fontGlyph);
 		if (font)
 		{
 			fonts_[fontName] = font;
 		}
 		return font;
 	}
+
+
 
 	// 저장된 폰트를 이름으로 조회하는 함수
 	ImFont* GetFont(const std::string& fontName)
