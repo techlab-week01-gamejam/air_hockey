@@ -187,6 +187,8 @@ public:
 	void ReplaceUI(UIState newState);
 
     void TogglePause();
+
+    UIState GetCurrentState() { return currentState; }
 private:
 	ScreenSize screen;
     UIState currentState = UIState::NONE;
