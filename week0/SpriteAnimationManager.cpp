@@ -1,6 +1,5 @@
 #include "SpriteAnimationManager.h"
 #include "TextureManager.h"
-#include "DebugLog.h"
 #include <d3dcompiler.h>
 
 SpriteAnimationManager* SpriteAnimationManager::Instance = nullptr;
@@ -166,16 +165,6 @@ void SpriteAnimationManager::RenderAnimation(ID3D11DeviceContext* context, const
 	float v = row / (float)animation.Rows;
 	float w = 1.0f / (float)animation.Cols;
 	float h = 1.0f / (float)animation.Rows;
-
-	AddDebugLog("RenderAnimation: " + name);
-	AddDebugLog("Position(x, y, z): " + std::to_string(position.x) + 
-		", " + std::to_string(position.y) + 
-		", " + std::to_string(position.z));
-	AddDebugLog("FrameIndex: " + std::to_string(frameIndex));
-	AddDebugLog("UV: u=" + std::to_string(u) +
-		", v=" + std::to_string(v) +
-		", w=" + std::to_string(w) +
-		", h=" + std::to_string(h));
 
 	// ConstantBuffer 크기 확인 후 데이터 업데이트
 	D3D11_BUFFER_DESC desc;

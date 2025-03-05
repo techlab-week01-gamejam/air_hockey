@@ -92,97 +92,6 @@ FVertexSimple cube_vertices[] =
     {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 8.0f },
 };
 
-
-
-// Structure for a 3D vector
-struct FVector3
-{
-    float x, y, z;
-    FVector3(float _x = 0, float _y = 0, float _z = 0) : x(_x), y(_y), z(_z) {}
-
-    // 벡터 덧셈 연산자
-    FVector3 operator+(const FVector3& Other) const
-    {
-        return FVector3(x + Other.x, y + Other.y, z + Other.z);
-    }
-
-    // 벡터 뺄셈 연산자
-    FVector3 operator-(const FVector3& Other) const
-    {
-        return FVector3(x - Other.x, y - Other.y, z - Other.z);
-    }
-
-    // 벡터 스칼라 곱 연산자 (오른쪽 스칼라 곱)
-    FVector3 operator*(float Scalar) const
-    {
-        return FVector3(x * Scalar, y * Scalar, z * Scalar);
-    }
-
-    // 벡터 스칼라 나누기 연산자
-    FVector3 operator/(float Scalar) const
-    {
-        return FVector3(x / Scalar, y / Scalar, z / Scalar);
-    }
-
-    // 벡터 덧셈 후 대입 연산자
-    FVector3& operator+=(const FVector3& Other)
-    {
-        x += Other.x;
-        y += Other.y;
-        z += Other.z;
-        return *this;
-    }
-
-    // 벡터 뺄셈 후 대입 연산자
-    FVector3& operator-=(const FVector3& Other)
-    {
-        x -= Other.x;
-        y -= Other.y;
-        z -= Other.z;
-        return *this;
-    }
-
-    // 벡터 스칼라 곱 후 대입 연산자
-    FVector3& operator*=(float Scalar)
-    {
-        x *= Scalar;
-        y *= Scalar;
-        z *= Scalar;
-        return *this;
-    }
-
-    // 벡터 스칼라 나누기 후 대입 연산자
-    FVector3& operator/=(float Scalar)
-    {
-        x /= Scalar;
-        y /= Scalar;
-        z /= Scalar;
-        return *this;
-    }
-
-    float Length() const
-    {
-        return sqrtf(x * x + y * y + z * z);
-    }
-    float LengthSquared() const
-    {
-        return (x * x + y * y + z * z);
-    }
-    FVector3 Normalized() const
-    {
-        float length = Length();
-        if (length == 0)
-        {
-            return FVector3(0, 0, 0);
-        }
-        return FVector3(x / length, y / length, z / length);
-    }
-    float Dot(const FVector3& Other) const
-    {
-        return x * Other.x + y * Other.y + z * Other.z;
-    }
-};
-
 #include "Sphere.h"
 
 class URenderer
@@ -1598,8 +1507,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     }
                 }
             }
-        }
-      
+
             // 플레이어 A 조작 (W, S)
             if (GetAsyncKeyState(0x57) & 0x8000 && CorkA->Location.y + moveA < 0.405f) { // W 키 (위로 이동)
                 if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
@@ -1689,7 +1597,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 HUD->ReplaceUI(EUIState::RESULT);
             }
         }
-
 
         #pragma endregion
 
