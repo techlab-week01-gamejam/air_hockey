@@ -509,6 +509,7 @@ public:
             Location.y = bottomBorder;
             Velocity.y *= -0.95f; // 중력이 없을 때는 완전 반사
         }
+        return 0;
     }
 
     // 두 공 사이의 충돌 처리
@@ -801,23 +802,29 @@ public:
         BallCount++;
     }
 
-    // 공 제거 (삭제할 요소를 마지막 요소와 교체)
-    void RemoveBall() {
-        if (BallCount == 0) return;
+    // 공 제거
+    void RemoveBall(int index) {
+        if (BallCount == 0 || index >= BallCount) return; // 잘못된 인덱스 방지
 
-        int RemoveIndex = rand() % BallCount;
+        // 삭제 대상 공 메모리 해제
+        delete BallList[index];
 
-        // 마지막 공과 자리 바꿈
-        delete BallList[RemoveIndex];
-        BallList[RemoveIndex] = BallList[BallCount - 1];
+        // 마지막 공을 현재 위치로 이동 (리스트 내에서만 이동)
+        if (index != BallCount - 1) {
+            BallList[index] = BallList[BallCount - 1];
+        }
+
         BallCount--;
 
-        // 배열이 너무 크면 줄이기
+        // 배열 크기 최적화 (메모리 줄이기)
         if (BallCount < Capacity / 4 && Capacity > 15) {
             Capacity /= 2;
             UBall** NewList = new UBall * [Capacity];
 
-            memcpy(NewList, BallList, BallCount * sizeof(UBall*));
+            // 안전하게 복사
+            for (int i = 0; i < BallCount; i++) {
+                NewList[i] = BallList[i];
+            }
 
             delete[] BallList;
             BallList = NewList;
@@ -837,11 +844,18 @@ public:
             BallList[i]->Move();
             isGoal = BallList[i]->CheckWallCollision();
             if (isGoal == 'A' || isGoal == 'B') {
-                while (BallCount > 0)
-                    RemoveBall();
-                AddBall(FVector3(0.0f));
-                CorkA->SetInit(FVector3(-0.875f, 0.0f, 0.0f));
-                CorkB->SetInit(FVector3(0.875f, 0.0f, 0.0f));
+                if (scoreA == 3 || scoreB == 3) {
+                    while (BallCount > 0)
+                        RemoveBall(BallCount - 1);
+                    CorkA->SetInit(FVector3(-0.875f, 0.0f, 0.0f));
+                    CorkB->SetInit(FVector3(0.875f, 0.0f, 0.0f));
+                    AddBall(FVector3(0.0f));
+                    scoreA = 0; scoreB = 0;
+                    break;
+                }
+                RemoveBall(i);
+                if (BallCount == 0)
+                    AddBall(FVector3(0.0f));
                 break;
             }
             CorkA->ResolveCollision(*BallList[i]);
