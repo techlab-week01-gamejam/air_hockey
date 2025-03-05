@@ -135,6 +135,10 @@
     <ClCompile Include="ImGui\imgui_tables.cpp" />
     <ClCompile Include="ImGui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="UI\GameUI.cpp" />
+    <ClCompile Include="UI\MainUI.cpp" />
+    <ClCompile Include="UI\PauseUI.cpp" />
+    <ClCompile Include="UI\UIManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="ShaderW0.hlsl">
@@ -159,6 +163,12 @@
     <ClInclude Include="ImGui\imstb_textedit.h" />
     <ClInclude Include="ImGui\imstb_truetype.h" />
     <ClInclude Include="Sphere.h" />
+    <ClInclude Include="stb_image.h" />
+    <ClInclude Include="UI\GameUI.h" />
+    <ClInclude Include="UI\MainUI.h" />
+    <ClInclude Include="UI\PauseUI.h" />
+    <ClInclude Include="UI\UI.h" />
+    <ClInclude Include="UI\UIManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

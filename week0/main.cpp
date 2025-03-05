@@ -1,3 +1,6 @@
+#define _CRT_SECURE_NO_WARNINGS
+#define STB_IMAGE_IMPLEMENTATION
+
 #include <windows.h>
 
 // D3D 사용에 필요한 라이브러리들을 링크합니다.
@@ -13,6 +16,8 @@
 #include "ImGui/imgui_internal.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "imGui/imgui_impl_win32.h"
+
+#include "UI/UIManager.h"
 
 bool bUseGravity = false; // 중력 적용 여부 (기본 OFF)
 float Gravity = -0.001f; // 중력 가속도 값 (음수 값: 아래 방향)
@@ -632,12 +637,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     bool bIsExit = false;
 
-    // ImGui를 생성합니다.
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui_ImplWin32_Init((void*)hWnd);
-    ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext);
+    // UI Manager
+    UIManager* HUD = new UIManager();
+    HUD->Initialize(renderer.Device, renderer.DeviceContext, hWnd);
+    HUD->ReplaceUI(UIState::MAIN);
+    static bool bEscapeReady = true;
 
     // FPS 제한을 위한 설정
     const int targetFPS = 60;
@@ -671,51 +675,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
         }
 
+        if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
+        {
+            if (bEscapeReady)
+            {
+                HUD->TogglePause();
+                bEscapeReady = false;
+                // Play Stop
+            }
+        }
+        else
+        {
+            bEscapeReady = true;
+        }
+
             BallManager.UpdateBalls();
-
-
             // 준비 작업
             renderer.Prepare();
             renderer.PrepareShader();
 
             BallManager.RenderBalls();
 
-            ImGui_ImplDX11_NewFrame();
-            ImGui_ImplWin32_NewFrame();
-            ImGui::NewFrame();
-
-            // 이후 ImGui UI 컨트롤 추가는 ImGui::NewFrame()과 ImGui::Render() 사이인 여기에 위치합니다.
-            ImGui::Begin("Jungle Property Window");
-
-            ImGui::Text("Hello Jungle World!");
-
-            // 중력 체크박스 추가
-            ImGui::Checkbox("Use Gravity", &bUseGravity);
-
-            static int ballCountInput = BallManager.BallCount;  // 현재 공 개수 저장
-
-            // 공 개수 표시 및 수동 입력 가능
-            if (ImGui::InputInt("Number Of Balls", &ballCountInput)) {
-                // 공 개수를 입력한 값에 맞게 조정
-                if (ballCountInput < 0) ballCountInput = 0; // 음수 방지
-
-                if (ballCountInput > BallManager.BallCount) {
-                    // 현재 개수보다 많으면 추가
-                    while (BallManager.BallCount < ballCountInput) {
-                        BallManager.AddBall();
-                    }
-                } else if (ballCountInput < BallManager.BallCount) {
-                    // 현재 개수보다 적으면 삭제
-                    while (BallManager.BallCount > ballCountInput) {
-                        BallManager.RemoveBall();
-                    }
-                }
-            }
-
-            ImGui::End();
-
-            ImGui::Render();
-            ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+            HUD->Update();
 
             // 현재 화면에 보여지는 버퍼와 그리기 작업을 위한 버퍼를 서로 교환합니다.
             renderer.SwapBuffer();
@@ -731,11 +712,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             } while (elapsedTime < targetFrameTime);
         }
-
-        // ImGui 소멸
-        ImGui_ImplDX11_Shutdown();
-        ImGui_ImplWin32_Shutdown();
-        ImGui::DestroyContext();
 
         // ReleaseShader() 직전에 소멸 함수를 추가합니다.
         renderer.ReleaseConstantBuffer();
