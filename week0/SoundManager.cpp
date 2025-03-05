@@ -60,6 +60,7 @@ void SoundManager::Release() {
 }
 
 /* 실행 파일 경로 반환 */
+/* 모든 효과음, BGM과 같은 음악 파일은 recource/sound 폴더에 넣어주세요! */
 std::string SoundManager::GetExecutablePath() {
 	char path[MAX_PATH];
 	GetModuleFileNameA(nullptr, path, MAX_PATH);
@@ -69,7 +70,7 @@ std::string SoundManager::GetExecutablePath() {
 	std::string currentDir = exePath.substr(0, exePath.find_last_of("\\/"));
 
 	// 한 단계 상위 폴더로 이동 후 "resource/sound/" 추가
-	std::string resourcePath = currentDir + "\\..\\resource\\sound";
+	std::string resourcePath = currentDir + "\\..\\..\\resource\\sound";
 
 	return resourcePath;
 }

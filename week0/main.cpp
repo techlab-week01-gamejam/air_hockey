@@ -392,10 +392,12 @@ public:
         const float rightBorder = 1.0f - Radius;
         const float topBorder = 1.0f - Radius;
         const float bottomBorder = -1.0f + Radius;
+        SoundManager* SoundMgr = SoundManager::GetInstance();
 
         if (Location.x < leftBorder) {
             Location.x = leftBorder;  // 위치 보정
             Velocity.x *= -1.0f;      // 반사
+
         } else if (Location.x > rightBorder) {
             Location.x = rightBorder;
             Velocity.x *= -1.0f;
@@ -426,10 +428,13 @@ public:
 
         if (Distance < MinDist) // 충돌 발생
         {
+            SoundManager* SoundMgr = SoundManager::GetInstance();
             // 충돌 후 속도 교환 (탄성 충돌 공식 적용)
             FVector3 Normal = Diff / Distance;
             FVector3 RelativeVelocity = Velocity - Other.Velocity;
             float Speed = (RelativeVelocity.x * Normal.x + RelativeVelocity.y * Normal.y);
+
+            SoundMgr->PlaySFX("Hit");
 
             if (Speed > 0) return; // 이미 멀어지고 있다면 처리하지 않음
 
@@ -691,76 +696,76 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             Sleep(100);  // 중복 입력 방지 (0.1초 딜레이)
         }
 
-            BallManager.UpdateBalls();
+        BallManager.UpdateBalls();
 
 
-            // 준비 작업
-            renderer.Prepare();
-            renderer.PrepareShader();
+        // 준비 작업
+        renderer.Prepare();
+        renderer.PrepareShader();
 
-            BallManager.RenderBalls();
+        BallManager.RenderBalls();
 
-            ImGui_ImplDX11_NewFrame();
-            ImGui_ImplWin32_NewFrame();
-            ImGui::NewFrame();
+        ImGui_ImplDX11_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
 
-            // 이후 ImGui UI 컨트롤 추가는 ImGui::NewFrame()과 ImGui::Render() 사이인 여기에 위치합니다.
-            ImGui::Begin("Jungle Property Window");
+        // 이후 ImGui UI 컨트롤 추가는 ImGui::NewFrame()과 ImGui::Render() 사이인 여기에 위치합니다.
+        ImGui::Begin("Jungle Property Window");
 
-            ImGui::Text("Hello Jungle World!");
+        ImGui::Text("Hello Jungle World!");
 
-            // 중력 체크박스 추가
-            ImGui::Checkbox("Use Gravity", &bUseGravity);
+        // 중력 체크박스 추가
+        ImGui::Checkbox("Use Gravity", &bUseGravity);
 
-            static int ballCountInput = BallManager.BallCount;  // 현재 공 개수 저장
+        static int ballCountInput = BallManager.BallCount;  // 현재 공 개수 저장
 
-            // 공 개수 표시 및 수동 입력 가능
-            if (ImGui::InputInt("Number Of Balls", &ballCountInput)) {
-                // 공 개수를 입력한 값에 맞게 조정
-                if (ballCountInput < 0) ballCountInput = 0; // 음수 방지
+        // 공 개수 표시 및 수동 입력 가능
+        if (ImGui::InputInt("Number Of Balls", &ballCountInput)) {
+            // 공 개수를 입력한 값에 맞게 조정
+            if (ballCountInput < 0) ballCountInput = 0; // 음수 방지
 
-                if (ballCountInput > BallManager.BallCount) {
-                    // 현재 개수보다 많으면 추가
-                    while (BallManager.BallCount < ballCountInput) {
-                        BallManager.AddBall();
-                    }
-                } else if (ballCountInput < BallManager.BallCount) {
-                    // 현재 개수보다 적으면 삭제
-                    while (BallManager.BallCount > ballCountInput) {
-                        BallManager.RemoveBall();
-                    }
+            if (ballCountInput > BallManager.BallCount) {
+                // 현재 개수보다 많으면 추가
+                while (BallManager.BallCount < ballCountInput) {
+                    BallManager.AddBall();
+                }
+            } else if (ballCountInput < BallManager.BallCount) {
+                // 현재 개수보다 적으면 삭제
+                while (BallManager.BallCount > ballCountInput) {
+                    BallManager.RemoveBall();
                 }
             }
-
-            ImGui::End();
-
-            ImGui::Render();
-            ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
-            // 현재 화면에 보여지는 버퍼와 그리기 작업을 위한 버퍼를 서로 교환합니다.
-            renderer.SwapBuffer();
-
-            do {
-                Sleep(0);
-
-                // 루프 종료 시간 기록
-                QueryPerformanceCounter(&endTime);
-
-                // 한 프레임이 소요된 시간 계산 (밀리초 단위로 변환)
-                elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
-
-            } while (elapsedTime < targetFrameTime);
         }
 
-        // ImGui 소멸
-        ImGui_ImplDX11_Shutdown();
-        ImGui_ImplWin32_Shutdown();
-        ImGui::DestroyContext();
+        ImGui::End();
 
-        // ReleaseShader() 직전에 소멸 함수를 추가합니다.
-        renderer.ReleaseConstantBuffer();
-        renderer.ReleaseShader();
-        renderer.Release();
+        ImGui::Render();
+        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-        return 0;
+        // 현재 화면에 보여지는 버퍼와 그리기 작업을 위한 버퍼를 서로 교환합니다.
+        renderer.SwapBuffer();
+
+        do {
+            Sleep(0);
+
+            // 루프 종료 시간 기록
+            QueryPerformanceCounter(&endTime);
+
+            // 한 프레임이 소요된 시간 계산 (밀리초 단위로 변환)
+            elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
+
+        } while (elapsedTime < targetFrameTime);
+    }
+
+    // ImGui 소멸
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+
+    // ReleaseShader() 직전에 소멸 함수를 추가합니다.
+    renderer.ReleaseConstantBuffer();
+    renderer.ReleaseShader();
+    renderer.Release();
+
+    return 0;
 }
