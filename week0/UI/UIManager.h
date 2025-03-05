@@ -9,7 +9,7 @@
 #include "../ImGui/imgui.h"
 #include "../stb_image.h"
 
-enum class UIState
+enum class EUIState
 {
 	NONE,
 	MAIN,
@@ -50,8 +50,6 @@ public:
 		}
 		return font;
 	}
-
-
 
 	// 저장된 폰트를 이름으로 조회하는 함수
 	ImFont* GetFont(const std::string& fontName)
@@ -186,14 +184,14 @@ public:
 
 	void Update();
 	void Release();
-	void ReplaceUI(UIState newState);
+	void ReplaceUI(EUIState newState);
 
     void TogglePause();
 
-    UIState GetCurrentState() { return currentState; }
+    EUIState GetCurrentState() { return currentState; }
 private:
 	ScreenSize screen;
-    UIState currentState = UIState::NONE;
+    EUIState currentState = EUIState::NONE;
 
 	UI* currentHUD = nullptr;
 

@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "MainUI.h"
+#include "../GameManager.h"
 
 void MainUI::Render()
 {
@@ -81,12 +82,11 @@ void MainUI::Render()
     ImVec2 button1Pos = ImVec2((windowSize.x - 480) * 0.5f - buttonSize.x * 0.5f, firstButtonY);
 
     ImGui::PushFont(FontManager::Get().GetFont("chewy72"));
-    // 첫 번째 버튼 생성
+    // 시작 버튼 생성
     ImGui::SetCursorPos(button1Pos);
     if (CreateButton("PLAY"))
     {
-        // Button 1 클릭 시 처리
-        manager->ReplaceUI(UIState::GAME);
+        GameManager::Get().StartNewGame();
     }
 
     // 두 번째 버튼은 첫 번째 버튼 바로 아래에 패딩을 더한 위치에 생성

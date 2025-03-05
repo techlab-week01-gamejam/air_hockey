@@ -20,6 +20,7 @@
 
 
 #include "UI/UIManager.h"
+#include "GameManager.h"
 bool bUseGravity = false; // 중력 적용 여부 (기본 OFF)
 float Gravity = -0.001f; // 중력 가속도 값 (음수 값: 아래 방향)
 float leftHole = 0.2f;
@@ -547,7 +548,7 @@ public:
             {
                 Velocity = (0.0f);
                 scoreB++;
-
+                GameManager::Get().AddScore(EPlayer::Player2);
                 return 'B';
             }
             Location.x = leftBorder;  // 위치 보정
@@ -559,6 +560,7 @@ public:
             {
                 Velocity = (0.0f);
                 scoreA++;
+                GameManager::Get().AddScore(EPlayer::Player1);
                 return 'A';
             }
             Location.x = rightBorder;
@@ -776,6 +778,24 @@ public:
         bMultipleBalls = bMultiple;
     };
 
+    // 새로운 게임 시작시 호출
+    void SetUpNewGame()
+    {
+        // 기존 아이템들을 모두 삭제
+        for (int i = 0; i < ItemCount; i++)
+        {
+            delete ItemList[i];
+        }
+        // 기존 배열 메모리 해제
+        delete[] ItemList;
+
+        // 아이템 개수를 초기화
+        ItemCount = 0;
+
+        // Capacity에 맞춰 새로운 아이템 배열 생성
+        ItemList = new UItem * [Capacity];
+    }
+
     void AddItem()
     {
         if (ItemCount <= Capacity)
@@ -882,6 +902,17 @@ public:
 
         // Vertex Buffer 생성
         InitializeVertexBuffer();
+    }
+
+    // 새로운 게임 시작 시 호출
+    void SetupNewGame()
+    {
+        while (BallCount > 0)
+        {
+            RemoveBall();
+        }
+        
+        AddBall(FVector3(0.0f, 0.0f, 0.0f));
     }
 
     // 공 추가 함수
@@ -1108,7 +1139,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
     UBallManager BallManager(&renderer, &ItemManager);
-    BallManager.AddBall(FVector3(0.0f, 0.0f, 0.0f));
 
 
 
@@ -1165,7 +1195,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // UI Manager
     UIManager* HUD = new UIManager();
     HUD->Initialize(renderer.Device, renderer.DeviceContext, hWnd);
-    HUD->ReplaceUI(UIState::MAIN);
+    HUD->ReplaceUI(EUIState::MAIN);
     static bool bEscapeReady = true;
 
     // FPS 제한을 위한 설정
@@ -1225,13 +1255,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
         }
 
+        // Escape Key Press : InGame
         if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
         {
             if (bEscapeReady)
             {
+                // Play Stop
+                GameManager::Get().TogglePlaying();
+
                 HUD->TogglePause();
                 bEscapeReady = false;
-                // Play Stop
             }
         }
         else
@@ -1239,18 +1272,40 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             bEscapeReady = true;
         }
 
-        // 준비 작업
+        #pragma region RenderSetup
         renderer.Prepare();
         renderer.PrepareShader();
+        #pragma endregion
 
-        HUD->Update();
-
-
-        if (HUD->GetCurrentState() == UIState::GAME)
+        #pragma region GameSetup
+        if (GameManager::Get().ShouldStartNewGame())
         {
+            // Global variables Setup
+            GameManager::Get().SetUpNewGame();
 
+            // Player A Setup
+            CorkA->SetInit(FVector3(-0.875f, 0.0f, 0.0f));
 
+            // Player B Setup
+            CorkB->SetInit(FVector3(0.875f, 0.0f, 0.0f));
 
+            // BallManager Setup
+            BallManager.SetupNewGame();
+
+            // ItemManager Setup
+            ItemManager.SetUpNewGame();
+
+            // HUD Setup
+            HUD->ReplaceUI(EUIState::GAME);
+
+            // Ready !
+            GameManager::Get().ReadyForNewGame();
+        }
+        #pragma endregion
+
+        #pragma region Logic
+        if (GameManager::Get().IsPlaying() && HUD->GetCurrentState() == EUIState::GAME)
+        {
             if (GetAsyncKeyState(0x57) & 0x8000 && CorkA->Location.y + moveA < 0.405f)
             {
                 CorkA->SetLocationY(moveA);
@@ -1349,9 +1404,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 CorkA->SetVelocityX(0.0f);
             if (!isMovingLeftB && !isReturningB)
                 CorkB->SetVelocityX(0.0f);
+        }
+        #pragma endregion
 
-        
-
+        #pragma region Rendering
+        if (HUD->GetCurrentState() != EUIState::MAIN)
+        {
             BallManager.RenderBalls();
             ItemManager.RenderItems();
 
@@ -1380,7 +1438,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             //플레이어B 렌더링
             CorkB->Render();
+
+            
         }
+        #pragma endregion
+
+        // 최종 UI를 업데이트 합니다.
+        HUD->Update();
 
         // 현재 화면에 보여지는 버퍼와 그리기 작업을 위한 버퍼를 서로 교환합니다.
         renderer.SwapBuffer();

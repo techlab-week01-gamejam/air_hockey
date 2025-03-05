@@ -47,7 +47,7 @@ void UIManager::Release()
     ImGui::DestroyContext();
 }
 
-void UIManager::ReplaceUI(UIState newState)
+void UIManager::ReplaceUI(EUIState newState)
 {
     if (currentHUD)
     {
@@ -57,18 +57,18 @@ void UIManager::ReplaceUI(UIState newState)
 
     switch (newState)
     {
-    case UIState::NONE:
+    case EUIState::NONE:
         break;
-    case UIState::MAIN:
-        currentState = UIState::MAIN;
+    case EUIState::MAIN:
+        currentState = EUIState::MAIN;
         currentHUD = new MainUI(this);
         break;
-    case UIState::GAME:
-        currentState = UIState::GAME;
+    case EUIState::GAME:
+        currentState = EUIState::GAME;
         currentHUD = new GameUI(this);
         break;
-    case UIState::PAUSE:
-        currentState = UIState::PAUSE;
+    case EUIState::PAUSE:
+        currentState = EUIState::PAUSE;
         currentHUD = new PauseUI(this);
         break;
     default:
@@ -78,9 +78,9 @@ void UIManager::ReplaceUI(UIState newState)
 
 void UIManager::TogglePause()
 {
-    if (currentState == UIState::GAME || currentState == UIState::PAUSE)
+    if (currentState == EUIState::GAME || currentState == EUIState::PAUSE)
     {
-        ReplaceUI(currentState == UIState::GAME ? UIState::PAUSE : UIState::GAME);
+        ReplaceUI(currentState == EUIState::GAME ? EUIState::PAUSE : EUIState::GAME);
     }
 }
 
