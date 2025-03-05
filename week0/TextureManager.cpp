@@ -51,6 +51,7 @@ void TextureManager::Release() {
 	TextureCache.clear();
 }
 
+/* WIC를 사용해서 이미지 로드 */
 HRESULT TextureManager::LoadTextureFromFile(const std::string& filename, ID3D11ShaderResourceView** textureView) {
     std::wstring wFilename = StringToWString(filename); // string → wstring 변환
 
@@ -89,4 +90,11 @@ HRESULT TextureManager::LoadTextureFromFile(const std::string& filename, ID3D11S
     Device->CreateShaderResourceView(texture.Get(), nullptr, textureView);
 
     return S_OK;
+}
+
+std::wstring TextureManager::StringToWString(const std::string& str) {
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, nullptr, 0);
+    std::wstring wstr(size_needed, 0);
+    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, &wstr[0], size_needed);
+    return wstr;
 }
