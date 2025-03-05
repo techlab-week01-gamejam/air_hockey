@@ -34,7 +34,7 @@ struct FVertexSimple
 {
     float x, y, z;    // Position
     float r, g, b, a; // Color
-    float u,v;
+    float u, v;
 };
 
 // 벽에 사용할 정육면체
@@ -47,7 +47,7 @@ FVertexSimple cube_vertices[] =
     { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f},
     {  0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
     {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 8.0f },
-                                                  
+
     // Back face (Z-)                             
     { -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
     {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f },
@@ -55,7 +55,7 @@ FVertexSimple cube_vertices[] =
     { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
     {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
     {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 8.0f },
-                                                  
+
     // Left face (X-)                             
     { -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
     { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f },
@@ -63,7 +63,7 @@ FVertexSimple cube_vertices[] =
     { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
     { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
     { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 8.0f },
-                                                  
+
     // Right face (X+)                            
     {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
     {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f },
@@ -71,7 +71,7 @@ FVertexSimple cube_vertices[] =
     {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
     {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
     {  0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 8.0f },
-                                                  
+
     // Top face (Y+)                              
     { -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
     { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f },
@@ -79,7 +79,7 @@ FVertexSimple cube_vertices[] =
     { -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
     {  0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
     {  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 8.0f },
-                                                  
+
     // Bottom face (Y-)                           
     { -0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 8.0f },
     { -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f },
@@ -204,7 +204,7 @@ public:
     unsigned int Stride;
 
     ID3D11SamplerState* SimpleSamplerState = nullptr;
-    
+
     ID3D11ShaderResourceView* PrimaryTexture = nullptr;
 
     ID3D11ShaderResourceView* CorkATexture = nullptr;
@@ -233,7 +233,7 @@ public:
 
         // 샘플러 생성
         CreateSamplerState();
-        
+
         TextureLoader::Get().g_pd3dDevice = Device;
 
         // Texture Preload
@@ -905,7 +905,7 @@ public:
             return;
 
         ID3D11ShaderResourceView* finalTexture = (PlayerFlag == 1) ? Renderer->CorkATexture : Renderer->CorkBTexture;
-        
+
         Renderer->DeviceContext->PSSetShaderResources(0, 1, &finalTexture);
         Renderer->UpdateConstant(Location, Radius);
         Renderer->RenderPrimitive(VertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
@@ -952,7 +952,7 @@ DWORD WINAPI BuffTimerThread(LPVOID lpParam) {
         Sleep(3000);
         Cork->SetPlayerBuff(EPlayerBuff::None);
     }
-    
+
     return 0;
 }
 
@@ -988,9 +988,9 @@ public:
     {
         while (BallCount > 0)
         {
-            RemoveBall(BallCount-1);
+            RemoveBall(BallCount - 1);
         }
-        
+
         AddBall(FVector3(0.0f, 0.0f, 0.0f));
     }
 
@@ -1052,7 +1052,7 @@ public:
             BallList[i]->Move();
             isGoal = BallList[i]->CheckWallCollision();
             if (isGoal == 'A' || isGoal == 'B') {
-                if (scoreA == 3 || scoreB == 3) {
+                if (scoreA == 10 || scoreB == 10) {
                     while (BallCount > 0)
                         RemoveBall(BallCount - 1);
                     CorkA->SetInit(FVector3(-0.875f, 0.0f, 0.0f));
@@ -1083,7 +1083,8 @@ public:
                                 CorkA->SetPlayerBuff(EPlayerBuff::Slow);
                                 HANDLE hThread = CreateThread(NULL, 0, BuffTimerThread, CorkA, 0, NULL);
                                 if (hThread) CloseHandle(hThread);
-                            }else if (ItemManager->ItemList[j]->ItemType == EItem::Stop) {
+                            }
+                            else if (ItemManager->ItemList[j]->ItemType == EItem::Stop) {
                                 CorkA->SetPlayerBuff(EPlayerBuff::Stop);
                                 HANDLE hThread = CreateThread(NULL, 0, BuffTimerThread, CorkA, 0, NULL);
                                 if (hThread) CloseHandle(hThread);
@@ -1103,7 +1104,7 @@ public:
                         }
                     }
                     ItemManager->RemoveItem(ItemManager->ItemList[j]);
-                    
+
                 }
             }
         }
@@ -1323,15 +1324,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     UCork* CorkB = new UCork(FVector3(0.875f, 0.0f, 0.0f), 0.07f, 30.0f, 2, &renderer);
 
     // A의 초기 위치 및 목표 위치 설정
-    float initialXA = CorkA->Location.x; // A의 원래 위치
-    float targetXA = CorkA->Location.x + 0.78f; // A가 이동할 목표 위치
+    float initialXA; // A의 원래 위치
+    float targetXA; // A가 이동할 목표 위치
 
     bool isMovingRightA = false;  // A가 오른쪽으로 이동 중인지
     bool isReturningA = false;    // A가 원래 위치로 돌아오는 중인지
 
     // B의 초기 위치 및 목표 위치 설정
-    float initialXB = CorkB->Location.x; // B의 원래 위치
-    float targetXB = CorkB->Location.x - 0.78f; // B가 이동할 목표 위치
+    float initialXB; // B의 원래 위치
+    float targetXB; // B가 이동할 목표 위치
 
     bool isMovingLeftB = false;  // B가 왼쪽으로 이동 중인지
     bool isReturningB = false;   // B가 원래 위치로 돌아오는 중인지
@@ -1377,12 +1378,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             bEscapeReady = true;
         }
 
-        #pragma region RenderSetup
+#pragma region RenderSetup
         renderer.Prepare();
         renderer.PrepareShader();
-        #pragma endregion
+#pragma endregion
 
-        #pragma region GameSetup
+#pragma region GameSetup
         if (GameManager::Get().ShouldStartNewGame())
         {
             // Global variables Setup
@@ -1406,78 +1407,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             // Ready !
             GameManager::Get().ReadyForNewGame();
         }
-        #pragma endregion
+#pragma endregion
 
-        #pragma region Logic
+#pragma region Logic
         if (GameManager::Get().IsPlaying() && HUD->GetCurrentState() == EUIState::GAME) {
 
-            if (GetAsyncKeyState(0x57) & 0x8000 && CorkA->Location.y + moveA < 0.405f) {
-                if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
-                    CorkA->SetLocationY(moveA/3);
-                    CorkA->SetVelocityY(moveA/3);
-                }
-                else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
-                    CorkA->SetLocationY(0);
-                    CorkA->SetVelocityY(0);
-                }
-                else {
-                    CorkA->SetLocationY(moveA);
-                    CorkA->SetVelocityY(moveA);
-                }
-            }
-            if (GetAsyncKeyState(0x53) & 0x8000 && CorkA->Location.y - moveA > -0.405f) {
-                if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
-                    CorkA->SetLocationY(-moveA/3);
-                    CorkA->SetVelocityY(-moveA/3);
-                }
-                else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
-                    CorkA->SetLocationY(0);
-                    CorkA->SetVelocityY(0);
-                }
-                else {
-                    CorkA->SetLocationY(-moveA);
-                    CorkA->SetVelocityY(-moveA);
-                }
-
-            }
-            if (GetAsyncKeyState(VK_UP) & 0x8000 && CorkB->Location.y + moveB < 0.405f) {
-                if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
-                    CorkB->SetLocationY(moveB/3);
-                    CorkB->SetVelocityY(moveB/3);
-                }
-                else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
-                    CorkB->SetLocationY(0);
-                    CorkB->SetVelocityY(0);
-                }
-                else {
-                    CorkB->SetLocationY(moveB);
-                    CorkB->SetVelocityY(moveB);
-                }
-
-            }
-            if (GetAsyncKeyState(VK_DOWN) & 0x8000 && CorkB->Location.y - moveB > -0.405f) {
-                if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
-                    CorkB->SetLocationY(-moveB/3);
-                    CorkB->SetVelocityY(-moveB/3);
-                }
-                else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
-                    CorkB->SetLocationY(0);
-                    CorkB->SetVelocityY(0);
-                }
-                else {
-                    CorkB->SetLocationY(-moveB);
-                    CorkB->SetVelocityY(-moveB);
-                }
-
-            }
-            //왼쪽 컨트롤키
-            if (GetAsyncKeyState(VK_LCONTROL) & 0x8000 && !isMovingRightA && !isReturningA) {
-                isMovingRightA = true;
-            }
-            //엔터키
-            if (GetAsyncKeyState(VK_RETURN) & 0x8000 && !isMovingLeftB && !isReturningB) {
-                isMovingLeftB = true;
-            }
             // A가 오른쪽으로 이동 중이라면
             if (isMovingRightA)
             {
@@ -1536,6 +1470,143 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 }
             }
 
+            // 플레이어 A 조작 (A, D)
+            if (!isMovingRightA && !isReturningA) {
+                if (GetAsyncKeyState(0x41) & 0x8000 && CorkA->Location.x - moveA > -0.905f) { // A 키 (왼쪽 이동)
+                    if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
+                        CorkA->SetLocationX(-moveA / 3);
+                        CorkA->SetVelocityX(-moveA / 3);
+                    }
+                    else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
+                        CorkA->SetLocationX(0);
+                        CorkA->SetVelocityX(0);
+                    }
+                    else {
+                        CorkA->SetLocationX(-moveA);
+                        CorkA->SetVelocityX(-moveA);
+                    }
+                }
+                if (GetAsyncKeyState(0x44) & 0x8000 && CorkA->Location.x + moveA < -0.4f) { // D 키 (오른쪽 이동)
+                    if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
+                        CorkA->SetLocationX(moveA / 3);
+                        CorkA->SetVelocityX(moveA / 3);
+                    }
+                    else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
+                        CorkA->SetLocationX(0);
+                        CorkA->SetVelocityX(0);
+                    }
+                    else {
+                        CorkA->SetLocationX(moveA);
+                        CorkA->SetVelocityX(moveA);
+                    }
+                }
+            }
+
+            // 플레이어 B 조작 (←, →)
+            if (!isMovingLeftB && !isReturningB) {
+                if (GetAsyncKeyState(VK_LEFT) & 0x8000 && CorkB->Location.x - moveB > 0.4f) { // ← 키 (왼쪽 이동)
+                    if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
+                        CorkB->SetLocationX(-moveB / 3);
+                        CorkB->SetVelocityX(-moveB / 3);
+                    }
+                    else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
+                        CorkB->SetLocationX(0);
+                        CorkB->SetVelocityX(0);
+                    }
+                    else {
+                        CorkB->SetLocationX(-moveB);
+                        CorkB->SetVelocityX(-moveB);
+                    }
+                }
+                if (GetAsyncKeyState(VK_RIGHT) & 0x8000 && CorkB->Location.x + moveB < 0.905f) { // → 키 (오른쪽 이동)
+                    if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
+                        CorkB->SetLocationX(moveB / 3);
+                        CorkB->SetVelocityX(moveB / 3);
+                    }
+                    else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
+                        CorkB->SetLocationX(0);
+                        CorkB->SetVelocityX(0);
+                    }
+                    else {
+                        CorkB->SetLocationX(moveB);
+                        CorkB->SetVelocityX(moveB);
+                    }
+                }
+            }
+
+            // 플레이어 A 조작 (W, S)
+            if (GetAsyncKeyState(0x57) & 0x8000 && CorkA->Location.y + moveA < 0.405f) { // W 키 (위로 이동)
+                if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
+                    CorkA->SetLocationY(moveA / 3);
+                    CorkA->SetVelocityY(moveA / 3);
+                }
+                else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
+                    CorkA->SetLocationY(0);
+                    CorkA->SetVelocityY(0);
+                }
+                else {
+                    CorkA->SetLocationY(moveA);
+                    CorkA->SetVelocityY(moveA);
+                }
+            }
+            if (GetAsyncKeyState(0x53) & 0x8000 && CorkA->Location.y - moveA > -0.405f) { // S 키 (아래로 이동)
+                if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
+                    CorkA->SetLocationY(-moveA / 3);
+                    CorkA->SetVelocityY(-moveA / 3);
+                }
+                else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
+                    CorkA->SetLocationY(0);
+                    CorkA->SetVelocityY(0);
+                }
+                else {
+                    CorkA->SetLocationY(-moveA);
+                    CorkA->SetVelocityY(-moveA);
+                }
+            }
+
+            // 플레이어 B 조작 (↑, ↓)
+            if (GetAsyncKeyState(VK_UP) & 0x8000 && CorkB->Location.y + moveB < 0.405f) { // ↑ 키 (위로 이동)
+                if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
+                    CorkB->SetLocationY(moveB / 3);
+                    CorkB->SetVelocityY(moveB / 3);
+                }
+                else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
+                    CorkB->SetLocationY(0);
+                    CorkB->SetVelocityY(0);
+                }
+                else {
+                    CorkB->SetLocationY(moveB);
+                    CorkB->SetVelocityY(moveB);
+                }
+            }
+            if (GetAsyncKeyState(VK_DOWN) & 0x8000 && CorkB->Location.y - moveB > -0.405f) { // ↓ 키 (아래로 이동)
+                if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
+                    CorkB->SetLocationY(-moveB / 3);
+                    CorkB->SetVelocityY(-moveB / 3);
+                }
+                else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
+                    CorkB->SetLocationY(0);
+                    CorkB->SetVelocityY(0);
+                }
+                else {
+                    CorkB->SetLocationY(-moveB);
+                    CorkB->SetVelocityY(-moveB);
+                }
+            }
+
+            //스페이스바
+            if (GetAsyncKeyState(VK_SPACE) & 0x8000 && !isMovingRightA && !isReturningA) {
+                isMovingRightA = true;
+                initialXA = CorkA->Location.x;
+                targetXA = CorkA->Location.x + 0.3f;
+            }
+            //엔터
+            if (GetAsyncKeyState(VK_RETURN) & 0x8000 && !isMovingLeftB && !isReturningB) {
+                isMovingLeftB = true;
+                initialXB = CorkB->Location.x;
+                targetXB = CorkB->Location.x - 0.3f;
+            }
+
             BallManager.UpdateBalls(CorkA, CorkB);
 
             CorkA->SetVelocityY(0.0f);
@@ -1556,7 +1627,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         #pragma endregion
 
-        #pragma region Rendering
+#pragma region Rendering
         if (HUD->GetCurrentState() != EUIState::MAIN)
         {
             //가로벽 렌더링
@@ -1580,7 +1651,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             renderer.RenderPrimitive(vertexBufferHoleA, numVerticeCube);
             renderer.UpdateConstant(offsetHoleB, 1.0f);
             renderer.RenderPrimitive(vertexBufferHoleB, numVerticeCube);
-            
+
             //아이템 렌더링
             ItemManager.RenderItems();
 
@@ -1592,9 +1663,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             BallManager.RenderBalls();
 
-            
+
         }
-        #pragma endregion
+#pragma endregion
 
         // 최종 UI를 업데이트 합니다.
         HUD->Update();
