@@ -1,3 +1,6 @@
+﻿#define _CRT_SECURE_NO_WARNINGS
+#define STB_IMAGE_IMPLEMENTATION
+
 #include <windows.h>
 #include <ctime>
 
@@ -15,6 +18,9 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "imGui/imgui_impl_win32.h"
 
+
+#include "UI/UIManager.h"
+#include "GameManager.h"
 bool bUseGravity = false; // 중력 적용 여부 (기본 OFF)
 float Gravity = -0.001f; // 중력 가속도 값 (음수 값: 아래 방향)
 float leftHole = 0.2f;
@@ -24,7 +30,8 @@ int scoreB = 0;
 char isGoal;
 
 // 1. Define the triangle vertices
-struct FVertexSimple {
+struct FVertexSimple
+{
     float x, y, z;    // Position
     float r, g, b, a; // Color
 };
@@ -83,32 +90,38 @@ FVertexSimple cube_vertices[] =
 
 
 // Structure for a 3D vector
-struct FVector3 {
+struct FVector3
+{
     float x, y, z;
     FVector3(float _x = 0, float _y = 0, float _z = 0) : x(_x), y(_y), z(_z) {}
 
     // 벡터 덧셈 연산자
-    FVector3 operator+(const FVector3& Other) const {
+    FVector3 operator+(const FVector3& Other) const
+    {
         return FVector3(x + Other.x, y + Other.y, z + Other.z);
     }
 
     // 벡터 뺄셈 연산자
-    FVector3 operator-(const FVector3& Other) const {
+    FVector3 operator-(const FVector3& Other) const
+    {
         return FVector3(x - Other.x, y - Other.y, z - Other.z);
     }
 
     // 벡터 스칼라 곱 연산자 (오른쪽 스칼라 곱)
-    FVector3 operator*(float Scalar) const {
+    FVector3 operator*(float Scalar) const
+    {
         return FVector3(x * Scalar, y * Scalar, z * Scalar);
     }
 
     // 벡터 스칼라 나누기 연산자
-    FVector3 operator/(float Scalar) const {
+    FVector3 operator/(float Scalar) const
+    {
         return FVector3(x / Scalar, y / Scalar, z / Scalar);
     }
 
     // 벡터 덧셈 후 대입 연산자
-    FVector3& operator+=(const FVector3& Other) {
+    FVector3& operator+=(const FVector3& Other)
+    {
         x += Other.x;
         y += Other.y;
         z += Other.z;
@@ -116,7 +129,8 @@ struct FVector3 {
     }
 
     // 벡터 뺄셈 후 대입 연산자
-    FVector3& operator-=(const FVector3& Other) {
+    FVector3& operator-=(const FVector3& Other)
+    {
         x -= Other.x;
         y -= Other.y;
         z -= Other.z;
@@ -124,7 +138,8 @@ struct FVector3 {
     }
 
     // 벡터 스칼라 곱 후 대입 연산자
-    FVector3& operator*=(float Scalar) {
+    FVector3& operator*=(float Scalar)
+    {
         x *= Scalar;
         y *= Scalar;
         z *= Scalar;
@@ -132,34 +147,41 @@ struct FVector3 {
     }
 
     // 벡터 스칼라 나누기 후 대입 연산자
-    FVector3& operator/=(float Scalar) {
+    FVector3& operator/=(float Scalar)
+    {
         x /= Scalar;
         y /= Scalar;
         z /= Scalar;
         return *this;
     }
 
-    float Length() const {
+    float Length() const
+    {
         return sqrtf(x * x + y * y + z * z);
     }
-    float LengthSquared() const {
+    float LengthSquared() const
+    {
         return (x * x + y * y + z * z);
     }
-    FVector3 Normalized() const {
+    FVector3 Normalized() const
+    {
         float length = Length();
-        if (length == 0) {
+        if (length == 0)
+        {
             return FVector3(0, 0, 0);
         }
         return FVector3(x / length, y / length, z / length);
     }
-    float Dot(const FVector3& Other) const {
+    float Dot(const FVector3& Other) const
+    {
         return x * Other.x + y * Other.y + z * Other.z;
     }
 };
 
 #include "Sphere.h"
 
-class URenderer {
+class URenderer
+{
 public:
     // Direct3D 11 장치(Device)와 장치 컨텍스트(Device Context) 및 스왑 체인(Swap Chain)을 관리하기 위한 포인터들
     ID3D11Device* Device = nullptr; // GPU와 통신하기 위한 Direct3D 장치
@@ -183,7 +205,8 @@ public:
 
 public:
     // 렌더러 초기화 함수
-    void Create(HWND hWindow) {
+    void Create(HWND hWindow)
+    {
         // Direct3D 장치 및 스왑 체인 생성
         CreateDeviceAndSwapChain(hWindow);
 
@@ -197,7 +220,8 @@ public:
     }
 
     // Direct3D 장치 및 스왑 체인을 생성하는 함수
-    void CreateDeviceAndSwapChain(HWND hWindow) {
+    void CreateDeviceAndSwapChain(HWND hWindow)
+    {
         // 지원하는 Direct3D 기능 레벨을 정의
         D3D_FEATURE_LEVEL featurelevels[] = { D3D_FEATURE_LEVEL_11_0 };
 
@@ -227,29 +251,35 @@ public:
     }
 
     // Direct3D 장치 및 스왑 체인을 해제하는 함수
-    void ReleaseDeviceAndSwapChain() {
-        if (DeviceContext) {
+    void ReleaseDeviceAndSwapChain()
+    {
+        if (DeviceContext)
+        {
             DeviceContext->Flush(); // 남아있는 GPU 명령 실행
         }
 
-        if (SwapChain) {
+        if (SwapChain)
+        {
             SwapChain->Release();
             SwapChain = nullptr;
         }
 
-        if (Device) {
+        if (Device)
+        {
             Device->Release();
             Device = nullptr;
         }
 
-        if (DeviceContext) {
+        if (DeviceContext)
+        {
             DeviceContext->Release();
             DeviceContext = nullptr;
         }
     }
 
     // 프레임 버퍼를 생성하는 함수
-    void CreateFrameBuffer() {
+    void CreateFrameBuffer()
+    {
         // 스왑 체인으로부터 백 버퍼 텍스처 가져오기
         SwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&FrameBuffer);
 
@@ -262,20 +292,24 @@ public:
     }
 
     // 프레임 버퍼를 해제하는 함수
-    void ReleaseFrameBuffer() {
-        if (FrameBuffer) {
+    void ReleaseFrameBuffer()
+    {
+        if (FrameBuffer)
+        {
             FrameBuffer->Release();
             FrameBuffer = nullptr;
         }
 
-        if (FrameBufferRTV) {
+        if (FrameBufferRTV)
+        {
             FrameBufferRTV->Release();
             FrameBufferRTV = nullptr;
         }
     }
 
     // 래스터라이저 상태를 생성하는 함수
-    void CreateRasterizerState() {
+    void CreateRasterizerState()
+    {
         D3D11_RASTERIZER_DESC rasterizerdesc = {};
         rasterizerdesc.FillMode = D3D11_FILL_SOLID; // 채우기 모드
         rasterizerdesc.CullMode = D3D11_CULL_BACK; // 백 페이스 컬링
@@ -284,15 +318,18 @@ public:
     }
 
     // 래스터라이저 상태를 해제하는 함수
-    void ReleaseRasterizerState() {
-        if (RasterizerState) {
+    void ReleaseRasterizerState()
+    {
+        if (RasterizerState)
+        {
             RasterizerState->Release();
             RasterizerState = nullptr;
         }
     }
 
     // 렌더러에 사용된 모든 리소스를 해제하는 함수
-    void Release() {
+    void Release()
+    {
         RasterizerState->Release();
 
         // 렌더 타겟을 초기화
@@ -303,11 +340,13 @@ public:
     }
 
     // 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
-    void SwapBuffer() {
+    void SwapBuffer()
+    {
         SwapChain->Present(1, 0); // 1: VSync 활성화
     }
 
-    void CreateShader() {
+    void CreateShader()
+    {
         ID3DBlob* vertexshaderCSO;
         ID3DBlob* pixelshaderCSO;
 
@@ -333,24 +372,29 @@ public:
         pixelshaderCSO->Release();
     }
 
-    void ReleaseShader() {
-        if (SimpleInputLayout) {
+    void ReleaseShader()
+    {
+        if (SimpleInputLayout)
+        {
             SimpleInputLayout->Release();
             SimpleInputLayout = nullptr;
         }
 
-        if (SimplePixelShader) {
+        if (SimplePixelShader)
+        {
             SimplePixelShader->Release();
             SimplePixelShader = nullptr;
         }
 
-        if (SimpleVertexShader) {
+        if (SimpleVertexShader)
+        {
             SimpleVertexShader->Release();
             SimpleVertexShader = nullptr;
         }
     }
 
-    void Prepare() {
+    void Prepare()
+    {
         DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
 
         DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -362,25 +406,29 @@ public:
         DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
     }
 
-    void PrepareShader() {
+    void PrepareShader()
+    {
         DeviceContext->VSSetShader(SimpleVertexShader, nullptr, 0);
         DeviceContext->PSSetShader(SimplePixelShader, nullptr, 0);
         DeviceContext->IASetInputLayout(SimpleInputLayout);
 
         // 버텍스 쉐이더에 상수 버퍼를 설정합니다.
-        if (ConstantBuffer) {
+        if (ConstantBuffer)
+        {
             DeviceContext->VSSetConstantBuffers(0, 1, &ConstantBuffer);
         }
     }
 
-    void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices) {
+    void RenderPrimitive(ID3D11Buffer* pBuffer, UINT numVertices)
+    {
         UINT offset = 0;
         DeviceContext->IASetVertexBuffers(0, 1, &pBuffer, &Stride, &offset);
 
         DeviceContext->Draw(numVertices, 0);
     }
 
-    ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth) {
+    ID3D11Buffer* CreateVertexBuffer(FVertexSimple* vertices, UINT byteWidth)
+    {
         // 2. Create a vertex buffer
         D3D11_BUFFER_DESC vertexbufferdesc = {};
         vertexbufferdesc.ByteWidth = byteWidth;
@@ -396,17 +444,20 @@ public:
         return vertexBuffer;
     }
 
-    void ReleaseVertexBuffer(ID3D11Buffer* vertexBuffer) {
+    void ReleaseVertexBuffer(ID3D11Buffer* vertexBuffer)
+    {
         vertexBuffer->Release();
     }
 
     // 상수 버퍼 생성, 소멸 함수 추가
-    struct FConstants {
+    struct FConstants
+    {
         FVector3 Offset;
         float Scale; // 공의 크기(반지름)
     };
 
-    void CreateConstantBuffer() {
+    void CreateConstantBuffer()
+    {
         D3D11_BUFFER_DESC constantbufferdesc = {};
         constantbufferdesc.ByteWidth = (sizeof(FConstants) + 0xf) & 0xfffffff0; // ensure constant buffer size is multiple of 16 bytes
         constantbufferdesc.Usage = D3D11_USAGE_DYNAMIC; // will be updated from CPU every frame
@@ -416,16 +467,20 @@ public:
         Device->CreateBuffer(&constantbufferdesc, nullptr, &ConstantBuffer);
     }
 
-    void ReleaseConstantBuffer() {
-        if (ConstantBuffer) {
+    void ReleaseConstantBuffer()
+    {
+        if (ConstantBuffer)
+        {
             ConstantBuffer->Release();
             ConstantBuffer = nullptr;
         }
     }
 
     // 상수 버퍼를 갱신하는 함수
-    void UpdateConstant(FVector3 Offset, float Scale) {
-        if (ConstantBuffer) {
+    void UpdateConstant(FVector3 Offset, float Scale)
+    {
+        if (ConstantBuffer)
+        {
             D3D11_MAPPED_SUBRESOURCE constantbufferMSR;
 
             DeviceContext->Map(ConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &constantbufferMSR); // update constant buffer every frame
@@ -440,11 +495,13 @@ public:
 };
 
 // 랜덤 실수 생성
-float RandomFloat(float Min, float Max) {
+float RandomFloat(float Min, float Max)
+{
     return Min + static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * (Max - Min);
 }
 
-class UBall {
+class UBall
+{
 public:
     FVector3 Location;  // 공의 위치
     FVector3 Velocity;  // 공의 속도
@@ -452,16 +509,19 @@ public:
     float Mass;         // 공의 질량
     int PlayerFlag;     // 마지막으로 공격한 플레이어
 
-    UBall(FVector3 Location, FVector3 Velocity, float Radius) : Location(Location), Velocity(Velocity), Radius(Radius) {
+    UBall(FVector3 Location, FVector3 Velocity, float Radius) : Location(Location), Velocity(Velocity), Radius(Radius)
+    {
         Mass = Radius * 10.0f; // 크기에 비례하는 질량
     }
 
-    void SetPlayerFlag(int playerFlag) {
+    void SetPlayerFlag(int playerFlag)
+    {
         PlayerFlag = playerFlag;
     }
 
     // 공을 이동시키는 함수
-    void Move() {
+    void Move()
+    {
         Location.x += Velocity.x;
         Location.y += Velocity.y;
         if (Velocity.x > 0.001f)
@@ -475,37 +535,45 @@ public:
     }
 
     // 벽과의 충돌 처리
-    char CheckWallCollision() {
+    char CheckWallCollision()
+    {
         const float leftBorder = -0.95f + Radius;
         const float rightBorder = 0.95f - Radius;
         const float topBorder = 0.475f - Radius;
         const float bottomBorder = -0.475f + Radius;
 
-        if (Location.x < leftBorder) {
-            if (leftHole > Location.y && Location.y > -(leftHole)) {
+        if (Location.x < leftBorder)
+        {
+            if (leftHole > Location.y && Location.y > -(leftHole))
+            {
                 Velocity = (0.0f);
                 scoreB++;
-
+                GameManager::Get().AddScore(EPlayer::Player2);
                 return 'B';
             }
             Location.x = leftBorder;  // 위치 보정
             Velocity.x *= -0.95f;      // 반사
         }
-        else if (Location.x > rightBorder) {
-            if (rightHole > Location.y && Location.y > -(rightHole)) {
+        else if (Location.x > rightBorder)
+        {
+            if (rightHole > Location.y && Location.y > -(rightHole))
+            {
                 Velocity = (0.0f);
                 scoreA++;
+                GameManager::Get().AddScore(EPlayer::Player1);
                 return 'A';
             }
             Location.x = rightBorder;
             Velocity.x *= -0.95f;
         }
 
-        if (Location.y > topBorder) {
+        if (Location.y > topBorder)
+        {
             Location.y = topBorder;
             Velocity.y *= -0.95f;
         }
-        else if (Location.y < bottomBorder) {
+        else if (Location.y < bottomBorder)
+        {
             Location.y = bottomBorder;
             Velocity.y *= -0.95f; // 중력이 없을 때는 완전 반사
         }
@@ -513,7 +581,8 @@ public:
     }
 
     // 두 공 사이의 충돌 처리
-    void ResolveCollision(UBall& Other) {
+    void ResolveCollision(UBall& Other)
+    {
         FVector3 Diff = Location - Other.Location;
         float Distance = sqrt(Diff.x * Diff.x + Diff.y * Diff.y);
         float MinDist = Radius + Other.Radius;
@@ -540,7 +609,8 @@ public:
         }
     }
 
-    void Render(URenderer* renderer, ID3D11Buffer* vertexBuffer) {
+    void Render(URenderer* renderer, ID3D11Buffer* vertexBuffer)
+    {
         if (nullptr == vertexBuffer)
             return;
 
@@ -552,25 +622,29 @@ public:
 };
 
 
-enum class EItem {
+enum class EItem
+{
     TwoBalls,
     Slow,
     Stop,
     TotalItemCount
 };
 
-EItem GetRandomItem() {
+EItem GetRandomItem()
+{
     return static_cast<EItem>(rand() % static_cast<int>(EItem::TotalItemCount));
 }
 
-class UItem {
+class UItem
+{
 public:
     FVector3 Location;
     EItem ItemType;
 
     UItem(FVector3 Location, EItem ItemType) : Location(Location), ItemType(ItemType) {}
 
-    void Render(URenderer* renderer, ID3D11Buffer* vertexBuffer) {
+    void Render(URenderer* renderer, ID3D11Buffer* vertexBuffer)
+    {
         if (nullptr == vertexBuffer)
             return;
 
@@ -579,7 +653,8 @@ public:
     }
 
     // Item와 Ball 사이의 충돌 여부
-    bool IsCollisionWithItem(UBall& Other) {
+    bool IsCollisionWithItem(UBall& Other)
+    {
         FVector3 Diff = Location - Other.Location;
         float Distance = sqrt(Diff.x * Diff.x + Diff.y * Diff.y);
         float MinDist = 0.05f + Other.Radius;
@@ -593,7 +668,8 @@ public:
     }
 };
 
-class UItemManager {
+class UItemManager
+{
 public:
     UItem** ItemList;
     int ItemCount;
@@ -602,7 +678,8 @@ public:
     ID3D11Buffer* VertexBuffer;  // 버텍스 버퍼
     bool bMultipleBalls; // 공이 두개 있는지 여부
 
-    UItemManager(URenderer* renderer) {
+    UItemManager(URenderer* renderer)
+    {
         ItemList = nullptr;
         ItemCount = 0;
         Capacity = 2;
@@ -614,16 +691,38 @@ public:
         InitializeVertexBuffer();
     }
 
-    void setbMultipleBalls(bool bMultiple) {
+    void setbMultipleBalls(bool bMultiple)
+    {
         bMultipleBalls = bMultiple;
     };
 
-    void AddItem() {
-        if (ItemCount <= Capacity) {
+    // 새로운 게임 시작시 호출
+    void SetUpNewGame()
+    {
+        // 기존 아이템들을 모두 삭제
+        for (int i = 0; i < ItemCount; i++)
+        {
+            delete ItemList[i];
+        }
+        // 기존 배열 메모리 해제
+        delete[] ItemList;
+
+        // 아이템 개수를 초기화
+        ItemCount = 0;
+
+        // Capacity에 맞춰 새로운 아이템 배열 생성
+        ItemList = new UItem * [Capacity];
+    }
+
+    void AddItem()
+    {
+        if (ItemCount <= Capacity)
+        {
             // 아이템 랜덤 뽑기
             EItem newItem = GetRandomItem();
             // 공이 두개이면 더 이상 TwoBalls 아이템이 나오지 않음
-            while (bMultipleBalls && newItem == EItem::TwoBalls) {
+            while (bMultipleBalls && newItem == EItem::TwoBalls)
+            {
                 newItem = GetRandomItem();
             }
 
@@ -632,11 +731,14 @@ public:
         }
     }
 
-    void RemoveItem(UItem* Item) {
+    void RemoveItem(UItem* Item)
+    {
         if (ItemCount == 0) return;
 
-        for (int i = 0; i < ItemCount; i++) {
-            if (ItemList[i] == Item) {
+        for (int i = 0; i < ItemCount; i++)
+        {
+            if (ItemList[i] == Item)
+            {
                 delete ItemList[i];
                 ItemList[i] = ItemList[ItemCount - 1];
                 ItemCount--;
@@ -647,30 +749,38 @@ public:
     }
 
     // 모든 아이템 렌더링
-    void RenderItems() {
-        for (int i = 0; i < ItemCount; i++) {
+    void RenderItems()
+    {
+        for (int i = 0; i < ItemCount; i++)
+        {
             ItemList[i]->Render(Renderer, VertexBuffer);
         }
     }
 
     // VertexBuffer 초기화
-    void InitializeVertexBuffer() {
-        if (nullptr == VertexBuffer) {
+    void InitializeVertexBuffer()
+    {
+        if (nullptr == VertexBuffer)
+        {
             VertexBuffer = Renderer->CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
         }
     }
 
     // Vertex Buffer 해제 (프로그램 종료 시 실행)
-    void ReleaseVertexBuffer() {
-        if (VertexBuffer) {
+    void ReleaseVertexBuffer()
+    {
+        if (VertexBuffer)
+        {
             Renderer->ReleaseVertexBuffer(VertexBuffer);
             VertexBuffer = nullptr;
         }
     }
 
     // 소멸자 (모든 공 삭제)
-    ~UItemManager() {
-        for (int i = 0; i < ItemCount; i++) {
+    ~UItemManager()
+    {
+        for (int i = 0; i < ItemCount; i++)
+        {
             delete ItemList[i];
         }
         delete[] ItemList;
@@ -789,7 +899,8 @@ public:
     UItemManager* ItemManager;
 
     // 생성자
-    UBallManager(URenderer* renderer, UItemManager* itemManager) {
+    UBallManager(URenderer* renderer, UItemManager* itemManager)
+    {
         BallList = nullptr;
         BallCount = 0;
         Capacity = 15;
@@ -804,9 +915,22 @@ public:
         InitializeVertexBuffer();
     }
 
+    // 새로운 게임 시작 시 호출
+    void SetupNewGame()
+    {
+        while (BallCount > 0)
+        {
+            RemoveBall(BallCount-1);
+        }
+        
+        AddBall(FVector3(0.0f, 0.0f, 0.0f));
+    }
+
     // 공 추가 함수
-    void AddBall(FVector3 Location) {
-        if (BallCount >= Capacity) {
+    void AddBall(FVector3 Location)
+    {
+        if (BallCount >= Capacity)
+        {
             // 배열 크기를 2배로 확장
             Capacity *= 2;
             UBall** NewList = new UBall * [Capacity];
@@ -853,15 +977,19 @@ public:
     }
 
     // 모든 공 이동
-    void UpdateBalls(UCork* CorkA, UCork* CorkB) {
-        if (bUseGravity) {
-            for (int i = 0; i < BallCount; i++) {
+    void UpdateBalls(UCork* CorkA, UCork* CorkB)
+    {
+        if (bUseGravity)
+        {
+            for (int i = 0; i < BallCount; i++)
+            {
                 float acceleration = Gravity / BallList[i]->Mass; // 중력 가속도 = Gravity / Mass
                 BallList[i]->Velocity.y += acceleration; // 질량에 비례한 중력 가속도 적용
             }
         }
 
-        for (int i = 0; i < BallCount; i++) {
+        for (int i = 0; i < BallCount; i++)
+        {
             BallList[i]->Move();
             isGoal = BallList[i]->CheckWallCollision();
             if (isGoal == 'A' || isGoal == 'B') {
@@ -882,9 +1010,12 @@ public:
             CorkA->ResolveCollision(*BallList[i]);
             CorkB->ResolveCollision(*BallList[i]);
 
-            for (int j = 0; j < ItemManager->ItemCount; j++) {
-                if (ItemManager->ItemList[j]->IsCollisionWithItem(*BallList[i])) {
-                    if (ItemManager->ItemList[j]->ItemType == EItem::TwoBalls) {
+            for (int j = 0; j < ItemManager->ItemCount; j++)
+            {
+                if (ItemManager->ItemList[j]->IsCollisionWithItem(*BallList[i]))
+                {
+                    if (ItemManager->ItemList[j]->ItemType == EItem::TwoBalls)
+                    {
                         AddBall(ItemManager->ItemList[j]->Location);
                     }
                     else {
@@ -919,15 +1050,18 @@ public:
         }
 
         // 공이 1개 이하라면 충돌 연산 불필요
-        if (BallCount < 2) {
+        if (BallCount < 2)
+        {
             ItemManager->setbMultipleBalls(false);
             return;
         }
         ItemManager->setbMultipleBalls(true);
 
         // 충돌 감지 및 처리 (모든 공 쌍 확인)
-        for (int i = 0; i < BallCount; i++) {
-            for (int j = i + 1; j < BallCount; j++) {
+        for (int i = 0; i < BallCount; i++)
+        {
+            for (int j = i + 1; j < BallCount; j++)
+            {
                 BallList[i]->ResolveCollision(*BallList[j]);
             }
         }
@@ -935,30 +1069,38 @@ public:
     }
 
     // 모든 공 렌더링
-    void RenderBalls() {
-        for (int i = 0; i < BallCount; i++) {
+    void RenderBalls()
+    {
+        for (int i = 0; i < BallCount; i++)
+        {
             BallList[i]->Render(Renderer, VertexBuffer);
         }
     }
 
     // VertexBuffer 초기화
-    void InitializeVertexBuffer() {
-        if (nullptr == VertexBuffer) {
+    void InitializeVertexBuffer()
+    {
+        if (nullptr == VertexBuffer)
+        {
             VertexBuffer = Renderer->CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
         }
     }
 
     // Vertex Buffer 해제 (프로그램 종료 시 실행)
-    void ReleaseVertexBuffer() {
-        if (VertexBuffer) {
+    void ReleaseVertexBuffer()
+    {
+        if (VertexBuffer)
+        {
             Renderer->ReleaseVertexBuffer(VertexBuffer);
             VertexBuffer = nullptr;
         }
     }
 
     // 소멸자 (모든 공 삭제)
-    ~UBallManager() {
-        for (int i = 0; i < BallCount; i++) {
+    ~UBallManager()
+    {
+        for (int i = 0; i < BallCount; i++)
+        {
             delete BallList[i];
         }
         delete[] BallList;
@@ -971,12 +1113,15 @@ public:
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 // 각종 메시지를 처리할 함수
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-    if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam)) {
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+    {
         return true;
     }
 
-    switch (message) {
+    switch (message)
+    {
     case WM_DESTROY:
         // Signal that the app should quit
         PostQuitMessage(0);
@@ -988,20 +1133,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
     return 0;
 }
 
-DWORD WINAPI TimerThread(LPVOID lpParam) {
+DWORD WINAPI TimerThread(LPVOID lpParam)
+{
     UItemManager* ItemManager = static_cast<UItemManager*>(lpParam);
-    while (true) {
-        if (ItemManager->ItemCount == 2) {
+    while (true)
+    {
+        if (ItemManager->ItemCount == 2)
+        {
             Sleep(10000);
         }
-        else {
+        else
+        {
             ItemManager->AddItem();
             Sleep(10000);
         }
     }
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+{
     srand(static_cast<unsigned int>(time(nullptr))); // 현재 시간을 기반으로 시드 설정
 
     // 윈도우 클래스 이름
@@ -1036,7 +1186,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
     UBallManager BallManager(&renderer, &ItemManager);
-    BallManager.AddBall(FVector3(0.0f, 0.0f, 0.0f));
 
 
 
@@ -1090,12 +1239,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     bool bIsExit = false;
 
-    // ImGui를 생성합니다.
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui_ImplWin32_Init((void*)hWnd);
-    ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext);
+    // UI Manager
+    UIManager* HUD = new UIManager();
+    HUD->Initialize(renderer.Device, renderer.DeviceContext, hWnd);
+    HUD->ReplaceUI(EUIState::MAIN);
+    static bool bEscapeReady = true;
 
     // FPS 제한을 위한 설정
     const int targetFPS = 60;
@@ -1131,202 +1279,261 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     bool isReturningB = false;   // B가 원래 위치로 돌아오는 중인지
 
     // Main Loop (Quit Message가 들어오기 전까지 아래 Loop를 무한히 실행하게 됨)
-    while (bIsExit == false) {
+    while (bIsExit == false)
+    {
         // 루프 시작 시간 기록
         QueryPerformanceCounter(&startTime);
 
         MSG msg;
 
         // 처리할 메시지가 더 이상 없을때 까지 수행
-        while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+        while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+        {
             // 키 입력 메시지를 번역
             TranslateMessage(&msg);
 
             // 메시지를 적절한 윈도우 프로시저에 전달, 메시지가 위에서 등록한 WndProc 으로 전달됨
             DispatchMessage(&msg);
 
-            if (msg.message == WM_QUIT) {
+            if (msg.message == WM_QUIT)
+            {
                 bIsExit = true;
                 break;
             }
         }
 
+        // Escape Key Press : InGame
+        if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
+        {
+            if (bEscapeReady)
+            {
+                // Play Stop
+                GameManager::Get().TogglePlaying();
 
-        if (GetAsyncKeyState(0x57) & 0x8000 && CorkA->Location.y + moveA < 0.405f) {
-            if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
-                CorkA->SetLocationY(moveA/2);
-                CorkA->SetVelocityY(moveA/2);
-            }
-            else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
-                CorkA->SetLocationY(0);
-                CorkA->SetVelocityY(0);
-            }
-            else {
-                CorkA->SetLocationY(moveA);
-                CorkA->SetVelocityY(moveA);
+                HUD->TogglePause();
+                bEscapeReady = false;
             }
         }
-        if (GetAsyncKeyState(0x53) & 0x8000 && CorkA->Location.y - moveA > -0.405f) {
-            if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
-                CorkA->SetLocationY(-moveA/2);
-                CorkA->SetVelocityY(-moveA/2);
-            }
-            else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
-                CorkA->SetLocationY(0);
-                CorkA->SetVelocityY(0);
-            }
-            else {
-                CorkA->SetLocationY(-moveA);
-                CorkA->SetVelocityY(-moveA);
-            }
-
-        }
-        if (GetAsyncKeyState(VK_UP) & 0x8000 && CorkB->Location.y + moveB < 0.405f) {
-            if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
-                CorkB->SetLocationY(moveB/2);
-                CorkB->SetVelocityY(moveB/2);
-            }
-            else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
-                CorkB->SetLocationY(0);
-                CorkB->SetVelocityY(0);
-            }
-            else {
-                CorkB->SetLocationY(moveB);
-                CorkB->SetVelocityY(moveB);
-            }
-
-        }
-        if (GetAsyncKeyState(VK_DOWN) & 0x8000 && CorkB->Location.y - moveB > -0.405f) {
-            if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
-                CorkB->SetLocationY(-moveB/2);
-                CorkB->SetVelocityY(-moveB/2);
-            }
-            else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
-                CorkB->SetLocationY(0);
-                CorkB->SetVelocityY(0);
-            }
-            else {
-                CorkB->SetLocationY(-moveB);
-                CorkB->SetVelocityY(-moveB);
-            }
-
-        }
-        //왼쪽 컨트롤키
-        if (GetAsyncKeyState(VK_LCONTROL) & 0x8000 && !isMovingRightA && !isReturningA) {
-            isMovingRightA = true;
-        }
-        //엔터키
-        if (GetAsyncKeyState(VK_RETURN) & 0x8000 && !isMovingLeftB && !isReturningB) {
-            isMovingLeftB = true;
+        else
+        {
+            bEscapeReady = true;
         }
 
-        // A가 오른쪽으로 이동 중이라면
-        if (isMovingRightA) {
-            if (CorkA->Location.x < targetXA) {
-                CorkA->SetLocationX(0.06f);
-                CorkA->SetVelocityX(0.06f);
-            }
-            else {
-                isMovingRightA = false;
-                isReturningA = true; // 원래 위치로 돌아가기 시작
-            }
-        }
-
-        // A가 원래 위치로 돌아오는 중이라면
-        if (isReturningA) {
-            if (CorkA->Location.x > initialXA) {
-                CorkA->SetLocationX(-0.06f);
-                CorkA->SetVelocityX(-0.06f);
-            }
-            else {
-                isReturningA = false; // 복귀 완료
-            }
-        }
-
-        // B가 왼쪽으로 이동 중이라면
-        if (isMovingLeftB) {
-            if (CorkB->Location.x > targetXB) {
-                CorkB->SetLocationX(-0.06f);
-                CorkB->SetVelocityX(-0.06f);
-            }
-            else {
-                isMovingLeftB = false;
-                isReturningB = true; // 원래 위치로 돌아가기 시작
-            }
-        }
-
-        // B가 원래 위치로 돌아오는 중이라면
-        if (isReturningB) {
-            if (CorkB->Location.x < initialXB) {
-                CorkB->SetLocationX(0.06f);
-                CorkB->SetVelocityX(0.06f);
-            }
-            else {
-                isReturningB = false; // 복귀 완료
-            }
-        }
-
-        BallManager.UpdateBalls(CorkA, CorkB);
-
-        CorkA->SetVelocityY(0.0f);
-        CorkB->SetVelocityY(0.0f);
-
-        if (!isMovingRightA && !isReturningA)
-            CorkA->SetVelocityX(0.0f);
-        if (!isMovingLeftB && !isReturningB)
-            CorkB->SetVelocityX(0.0f);
-
-        // 준비 작업
+        #pragma region RenderSetup
         renderer.Prepare();
         renderer.PrepareShader();
+        #pragma endregion
 
-        BallManager.RenderBalls();
-        ItemManager.RenderItems();
+        #pragma region GameSetup
+        if (GameManager::Get().ShouldStartNewGame())
+        {
+            // Global variables Setup
+            GameManager::Get().SetUpNewGame();
 
-        //가로벽 렌더링
-        renderer.UpdateConstant(offsetHorizontal, 1.0f);
-        renderer.RenderPrimitive(vertexBufferHorizontal, numVerticeCube);
-        offsetHorizontal.y *= -1.0f; //offset 변경
-        renderer.UpdateConstant(offsetHorizontal, 1.0f);
-        renderer.RenderPrimitive(vertexBufferHorizontal, numVerticeCube);
+            // Player A Setup
+            CorkA->SetInit(FVector3(-0.875f, 0.0f, 0.0f));
 
-        //세로벽 렌더링
-        renderer.UpdateConstant(offsetVertical, 1.0f);
-        renderer.RenderPrimitive(vertexBufferVertical, numVerticeCube);
-        offsetVertical.x *= -1.0f;  //offset 변경
-        renderer.UpdateConstant(offsetVertical, 1.0f);
-        renderer.RenderPrimitive(vertexBufferVertical, numVerticeCube);
+            // Player B Setup
+            CorkB->SetInit(FVector3(0.875f, 0.0f, 0.0f));
 
-        //홀 렌더링
-        renderer.UpdateConstant(offsetHoleA, 1.0f);
-        renderer.RenderPrimitive(vertexBufferHoleA, numVerticeCube);
-        renderer.UpdateConstant(offsetHoleB, 1.0f);
-        renderer.RenderPrimitive(vertexBufferHoleB, numVerticeCube);
+            // BallManager Setup
+            BallManager.SetupNewGame();
 
-        //플레이어A 렌더링
-        CorkA->Render();
+            // ItemManager Setup
+            ItemManager.SetUpNewGame();
 
-        //플레이어B 렌더링
-        CorkB->Render();
+            // HUD Setup
+            HUD->ReplaceUI(EUIState::GAME);
 
-        ImGui_ImplDX11_NewFrame();
-        ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame();
+            // Ready !
+            GameManager::Get().ReadyForNewGame();
+        }
+        #pragma endregion
 
-        // 이후 ImGui UI 컨트롤 추가는 ImGui::NewFrame()과 ImGui::Render() 사이인 여기에 위치합니다.
-        ImGui::Begin("Jungle Property Window");
+        #pragma region Logic
+        if (GameManager::Get().IsPlaying() && HUD->GetCurrentState() == EUIState::GAME) {
 
-        ImGui::Text("Hello Jungle World!");
+            if (GetAsyncKeyState(0x57) & 0x8000 && CorkA->Location.y + moveA < 0.405f) {
+                if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
+                    CorkA->SetLocationY(moveA/2);
+                    CorkA->SetVelocityY(moveA/2);
+                }
+                else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
+                    CorkA->SetLocationY(0);
+                    CorkA->SetVelocityY(0);
+                }
+                else {
+                    CorkA->SetLocationY(moveA);
+                    CorkA->SetVelocityY(moveA);
+                }
+            }
+            if (GetAsyncKeyState(0x53) & 0x8000 && CorkA->Location.y - moveA > -0.405f) {
+                if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
+                    CorkA->SetLocationY(-moveA/2);
+                    CorkA->SetVelocityY(-moveA/2);
+                }
+                else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
+                    CorkA->SetLocationY(0);
+                    CorkA->SetVelocityY(0);
+                }
+                else {
+                    CorkA->SetLocationY(-moveA);
+                    CorkA->SetVelocityY(-moveA);
+                }
 
-        ImGui::End();
+            }
+            if (GetAsyncKeyState(VK_UP) & 0x8000 && CorkB->Location.y + moveB < 0.405f) {
+                if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
+                    CorkB->SetLocationY(moveB/2);
+                    CorkB->SetVelocityY(moveB/2);
+                }
+                else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
+                    CorkB->SetLocationY(0);
+                    CorkB->SetVelocityY(0);
+                }
+                else {
+                    CorkB->SetLocationY(moveB);
+                    CorkB->SetVelocityY(moveB);
+                }
 
-        ImGui::Render();
-        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+            }
+            if (GetAsyncKeyState(VK_DOWN) & 0x8000 && CorkB->Location.y - moveB > -0.405f) {
+                if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
+                    CorkB->SetLocationY(-moveB/2);
+                    CorkB->SetVelocityY(-moveB/2);
+                }
+                else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
+                    CorkB->SetLocationY(0);
+                    CorkB->SetVelocityY(0);
+                }
+                else {
+                    CorkB->SetLocationY(-moveB);
+                    CorkB->SetVelocityY(-moveB);
+                }
+
+            }
+            //왼쪽 컨트롤키
+            if (GetAsyncKeyState(VK_LCONTROL) & 0x8000 && !isMovingRightA && !isReturningA) {
+                isMovingRightA = true;
+            }
+            //엔터키
+            if (GetAsyncKeyState(VK_RETURN) & 0x8000 && !isMovingLeftB && !isReturningB) {
+                isMovingLeftB = true;
+            }
+            // A가 오른쪽으로 이동 중이라면
+            if (isMovingRightA)
+            {
+                if (CorkA->Location.x < targetXA)
+                {
+                    CorkA->SetLocationX(0.06f);
+                    CorkA->SetVelocityX(0.06f);
+                }
+                else
+                {
+                    isMovingRightA = false;
+                    isReturningA = true; // 원래 위치로 돌아가기 시작
+                }
+            }
+
+            // A가 원래 위치로 돌아오는 중이라면
+            if (isReturningA)
+            {
+                if (CorkA->Location.x > initialXA)
+                {
+                    CorkA->SetLocationX(-0.06f);
+                    CorkA->SetVelocityX(-0.06f);
+                }
+                else
+                {
+                    isReturningA = false; // 복귀 완료
+                }
+            }
+
+            // B가 왼쪽으로 이동 중이라면
+            if (isMovingLeftB)
+            {
+                if (CorkB->Location.x > targetXB)
+                {
+                    CorkB->SetLocationX(-0.06f);
+                    CorkB->SetVelocityX(-0.06f);
+                }
+                else
+                {
+                    isMovingLeftB = false;
+                    isReturningB = true; // 원래 위치로 돌아가기 시작
+                }
+            }
+
+            // B가 원래 위치로 돌아오는 중이라면
+            if (isReturningB)
+            {
+                if (CorkB->Location.x < initialXB)
+                {
+                    CorkB->SetLocationX(0.06f);
+                    CorkB->SetVelocityX(0.06f);
+                }
+                else
+                {
+                    isReturningB = false; // 복귀 완료
+                }
+            }
+
+            BallManager.UpdateBalls(CorkA, CorkB);
+
+            CorkA->SetVelocityY(0.0f);
+            CorkB->SetVelocityY(0.0f);
+
+            if (!isMovingRightA && !isReturningA)
+                CorkA->SetVelocityX(0.0f);
+            if (!isMovingLeftB && !isReturningB)
+                CorkB->SetVelocityX(0.0f);
+        }
+        #pragma endregion
+
+        #pragma region Rendering
+        if (HUD->GetCurrentState() != EUIState::MAIN)
+        {
+            BallManager.RenderBalls();
+            ItemManager.RenderItems();
+
+            //가로벽 렌더링
+            renderer.UpdateConstant(offsetHorizontal, 1.0f);
+            renderer.RenderPrimitive(vertexBufferHorizontal, numVerticeCube);
+            offsetHorizontal.y *= -1.0f; //offset 변경
+            renderer.UpdateConstant(offsetHorizontal, 1.0f);
+            renderer.RenderPrimitive(vertexBufferHorizontal, numVerticeCube);
+
+            //세로벽 렌더링
+            renderer.UpdateConstant(offsetVertical, 1.0f);
+            renderer.RenderPrimitive(vertexBufferVertical, numVerticeCube);
+            offsetVertical.x *= -1.0f;  //offset 변경
+            renderer.UpdateConstant(offsetVertical, 1.0f);
+            renderer.RenderPrimitive(vertexBufferVertical, numVerticeCube);
+
+            //홀 렌더링
+            renderer.UpdateConstant(offsetHoleA, 1.0f);
+            renderer.RenderPrimitive(vertexBufferHoleA, numVerticeCube);
+            renderer.UpdateConstant(offsetHoleB, 1.0f);
+            renderer.RenderPrimitive(vertexBufferHoleB, numVerticeCube);
+
+            //플레이어A 렌더링
+            CorkA->Render();
+
+            //플레이어B 렌더링
+            CorkB->Render();
+
+            
+        }
+        #pragma endregion
+
+        // 최종 UI를 업데이트 합니다.
+        HUD->Update();
 
         // 현재 화면에 보여지는 버퍼와 그리기 작업을 위한 버퍼를 서로 교환합니다.
         renderer.SwapBuffer();
 
-        do {
+        do
+        {
             Sleep(0);
 
             // 루프 종료 시간 기록
@@ -1337,11 +1544,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         } while (elapsedTime < targetFrameTime);
     }
-
-    // ImGui 소멸
-    ImGui_ImplDX11_Shutdown();
-    ImGui_ImplWin32_Shutdown();
-    ImGui::DestroyContext();
 
     // ReleaseShader() 직전에 소멸 함수를 추가합니다.
     renderer.ReleaseConstantBuffer();
