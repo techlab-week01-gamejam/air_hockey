@@ -24,7 +24,7 @@ void MainUI::Render()
 
     // 메인 타이틀
     const char* title = "AIR HOCKEY";
-    ImGui::PushFont(FontManager::Get().GetFont("Arial72"));
+    ImGui::PushFont(FontManager::Get().GetFont("chewy120"));
     ImVec2 textSize = ImGui::CalcTextSize(title);
     ImGui::SetCursorPos(ImVec2((windowSize.x - textSize.x) * 0.5f, 200));
     ImGui::Text("%s", title);
@@ -48,7 +48,7 @@ void MainUI::Render()
     float firstButtonY = windowSize.y - totalButtonsHeight;
     ImVec2 button1Pos = ImVec2((windowSize.x - 480) * 0.5f - buttonSize.x * 0.5f, firstButtonY);
 
-    ImGui::PushFont(FontManager::Get().GetFont("Arial42"));
+    ImGui::PushFont(FontManager::Get().GetFont("chewy72"));
     // 첫 번째 버튼 생성
     ImGui::SetCursorPos(button1Pos);
     if (CreateButton("PLAY"))

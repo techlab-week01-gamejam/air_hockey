@@ -91,6 +91,9 @@ void UIManager::PrepareFonts()
     FontManager::Get().LoadFont("C:\\Windows\\Fonts\\Arial.ttf", 42.0f, "Arial42");
     FontManager::Get().LoadFont("C:\\Windows\\Fonts\\Arial.ttf", 54.0f, "Arial54");
     FontManager::Get().LoadFont("C:\\Windows\\Fonts\\Arial.ttf", 72.0f, "Arial72");
+    FontManager::Get().LoadFont("fonts/Chewy-Regular.ttf", 72.0f, "chewy72");
+    FontManager::Get().LoadFont("fonts/Chewy-Regular.ttf", 84.0f, "chewy84");
+    FontManager::Get().LoadFont("fonts/Chewy-Regular.ttf", 120.0f, "chewy120");
 }
 
 void UIManager::PrepareTexture()

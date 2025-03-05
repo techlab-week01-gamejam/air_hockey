@@ -22,20 +22,20 @@ void PauseUI::Render()
 
     // 메인 타이틀
     const char* title = "PAUSED";
-    ImGui::PushFont(FontManager::Get().GetFont("Arial72"));
+    ImGui::PushFont(FontManager::Get().GetFont("chewy120"));
     ImVec2 textSize = ImGui::CalcTextSize(title);
     ImGui::SetCursorPos(ImVec2((windowSize.x - textSize.x) * 0.5f, 400));
     ImGui::Text("%s", title);
     ImGui::PopFont();
 
-    ImGui::SetCursorPos(ImVec2(25.0f, ImGui::GetIO().DisplaySize.y * 0.8f));
+    ImGui::SetCursorPos(ImVec2(25.0f, ImGui::GetIO().DisplaySize.y * 0.7f));
 
     if (CreateButton("CONTINUE"))
     {
         manager->ReplaceUI(UIState::GAME);
     }
 
-    ImGui::SetCursorPos(ImVec2(25.0f, ImGui::GetIO().DisplaySize.y * 0.8f + 60.0f));
+    ImGui::SetCursorPos(ImVec2(25.0f, ImGui::GetIO().DisplaySize.y * 0.8f + 40.0f));
     if (CreateButton("RESTART"))
     {
         manager->ReplaceUI(UIState::MAIN);
@@ -60,11 +60,11 @@ bool PauseUI::CreateButton(const char* label)
     ImGui::PushID(label);
 
     // 두 폰트로 텍스트 크기를 계산
-    ImGui::PushFont(FontManager::Get().GetFont("Arial42"));
+    ImGui::PushFont(FontManager::Get().GetFont("chewy72"));
     ImVec2 normalSize = ImGui::CalcTextSize(label);
     ImGui::PopFont();
 
-    ImGui::PushFont(FontManager::Get().GetFont("Arial54"));
+    ImGui::PushFont(FontManager::Get().GetFont("chewy84"));
     ImVec2 largeSize = ImGui::CalcTextSize(label);
     ImGui::PopFont();
 
@@ -85,7 +85,7 @@ bool PauseUI::CreateButton(const char* label)
     if (ImGui::IsItemHovered())
     {
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-        ImGui::PushFont(FontManager::Get().GetFont("Arial54"));
+        ImGui::PushFont(FontManager::Get().GetFont("chewy84"));
         ImGui::Text("%s", label);
         ImGui::PopFont();
         ImGui::PopStyleColor();
@@ -93,7 +93,7 @@ bool PauseUI::CreateButton(const char* label)
     else
     {
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
-        ImGui::PushFont(FontManager::Get().GetFont("Arial42"));
+        ImGui::PushFont(FontManager::Get().GetFont("chewy72"));
         ImGui::Text("%s", label);
         ImGui::PopFont();
         ImGui::PopStyleColor();
