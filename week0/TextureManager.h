@@ -26,5 +26,5 @@ private:
 	static TextureManager* Instance;
 	ID3D11Device* Device = nullptr;
 	ID3D11DeviceContext* DeviceContext = nullptr;
-	std::unordered_map<std::string, ID3D11ShaderResourceView*> TetxureCache;
+	std::unordered_map<std::string, ID3D11ShaderResourceView*> TextureCache;
 };
