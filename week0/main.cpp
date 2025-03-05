@@ -1544,7 +1544,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 CorkA->SetVelocityX(0.0f);
             if (!isMovingLeftB && !isReturningB)
                 CorkB->SetVelocityX(0.0f);
+
+            // 최대 스코어가 도달했는가?
+            if (GameManager::Get().checkOverWinScore())
+            {
+                HUD->ReplaceUI(EUIState::RESULT);
+            }
         }
+
+
         #pragma endregion
 
         #pragma region Rendering

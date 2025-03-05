@@ -27,7 +27,7 @@ public:
 
 	EPlayer GetWinner()
 	{
-		return player1Score >= WIN_SCORE ? EPlayer::Player1 : EPlayer::Player2;
+		return player1Score >= player2Score ? EPlayer::Player1 : EPlayer::Player2;
 	}
 
 	void SetUpNewGame()

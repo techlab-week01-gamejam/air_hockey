@@ -10,6 +10,7 @@
 #include "MainUI.h"
 #include "GameUI.h"
 #include "PauseUI.h"
+#include "ResultUI.h"
 
 void UIManager::Initialize(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext, HWND hWnd)
 {
@@ -69,6 +70,9 @@ void UIManager::ReplaceUI(EUIState newState)
         currentState = EUIState::PAUSE;
         currentHUD = new PauseUI(this);
         break;
+    case EUIState::RESULT:
+        currentState = EUIState::RESULT;
+        currentHUD = new ResultUI(this);
     default:
         break;
     }
@@ -108,4 +112,8 @@ void UIManager::PrepareTexture()
 
     ID3D11ShaderResourceView* king2Texture;
     TextureLoader::Get().LoadTextureFromFile("./textures/king-black.png", &king2Texture, "king-black");
+
+
+    ID3D11ShaderResourceView* perkTexture;
+    TextureLoader::Get().LoadTextureFromFile("./textures/perk.png", &perkTexture, "perk");
 }

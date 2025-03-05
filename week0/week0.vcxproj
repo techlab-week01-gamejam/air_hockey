@@ -138,6 +138,7 @@
     <ClCompile Include="UI\GameUI.cpp" />
     <ClCompile Include="UI\MainUI.cpp" />
     <ClCompile Include="UI\PauseUI.cpp" />
+    <ClCompile Include="UI\ResultUI.cpp" />
     <ClCompile Include="UI\UIManager.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -168,6 +169,7 @@
     <ClInclude Include="UI\GameUI.h" />
     <ClInclude Include="UI\MainUI.h" />
     <ClInclude Include="UI\PauseUI.h" />
+    <ClInclude Include="UI\ResultUI.h" />
     <ClInclude Include="UI\UI.h" />
     <ClInclude Include="UI\UIManager.h" />
   </ItemGroup>

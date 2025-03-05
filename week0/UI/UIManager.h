@@ -14,7 +14,8 @@ enum class EUIState
 	NONE,
 	MAIN,
 	GAME,
-	PAUSE
+	PAUSE,
+    RESULT
 };
 
 struct ScreenSize
