@@ -1,3 +1,6 @@
+#define _CRT_SECURE_NO_WARNINGS
+#define STB_IMAGE_IMPLEMENTATION
+
 #include <windows.h>
 #include <ctime>
 
@@ -15,6 +18,8 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "imGui/imgui_impl_win32.h"
 
+
+#include "UI/UIManager.h"
 bool bUseGravity = false; // 중력 적용 여부 (기본 OFF)
 float Gravity = -0.001f; // 중력 가속도 값 (음수 값: 아래 방향)
 float leftHole = 0.2f;
@@ -1029,12 +1034,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     bool bIsExit = false;
 
-    // ImGui를 생성합니다.
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    ImGui_ImplWin32_Init((void*)hWnd);
-    ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext);
+    // UI Manager
+    UIManager* HUD = new UIManager();
+    HUD->Initialize(renderer.Device, renderer.DeviceContext, hWnd);
+    HUD->ReplaceUI(UIState::MAIN);
+    static bool bEscapeReady = true;
 
     // FPS 제한을 위한 설정
     const int targetFPS = 60;
@@ -1090,6 +1094,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
         }
 
+        if (GetAsyncKeyState(VK_ESCAPE) & 0x8000)
+        {
+            if (bEscapeReady)
+            {
+                HUD->TogglePause();
+                bEscapeReady = false;
+                // Play Stop
+            }
+        }
+        else
+        {
+            bEscapeReady = true;
+        }
+      
         if (GetAsyncKeyState(0x57) & 0x8000 && CorkA->Location.y + moveA < 0.405f) {
             CorkA->SetLocationY(moveA);
             CorkA->SetVelocityY(moveA);
@@ -1178,6 +1196,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         BallManager.RenderBalls();
         ItemManager.RenderItems();
 
+        HUD->Update();
+      
         //가로벽 렌더링
         renderer.UpdateConstant(offsetHorizontal, 1.0f);
         renderer.RenderPrimitive(vertexBufferHorizontal, numVerticeCube);
@@ -1232,11 +1252,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         } while (elapsedTime < targetFrameTime);
     }
-
-    // ImGui 소멸
-    ImGui_ImplDX11_Shutdown();
-    ImGui_ImplWin32_Shutdown();
-    ImGui::DestroyContext();
 
     // ReleaseShader() 직전에 소멸 함수를 추가합니다.
     renderer.ReleaseConstantBuffer();
