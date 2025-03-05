@@ -1,4 +1,5 @@
 #include "PauseUI.h"
+#include "../GameManager.h"
 
 void PauseUI::Render()
 {
@@ -12,6 +13,7 @@ void PauseUI::Render()
         ImGuiWindowFlags_NoResize |
         ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoScrollWithMouse |
         ImGuiWindowFlags_NoCollapse;
 
     ImGui::Begin("Pause Window", nullptr, window_flags);
@@ -32,19 +34,19 @@ void PauseUI::Render()
 
     if (CreateButton("CONTINUE"))
     {
-        manager->ReplaceUI(UIState::GAME);
+        manager->ReplaceUI(EUIState::GAME);
     }
 
     ImGui::SetCursorPos(ImVec2(25.0f, ImGui::GetIO().DisplaySize.y * 0.8f + 40.0f));
     if (CreateButton("RESTART"))
     {
-        manager->ReplaceUI(UIState::MAIN);
+        GameManager::Get().StartNewGame();
     }
 
     ImGui::SetCursorPos(ImVec2(25.0f, ImGui::GetIO().DisplaySize.y * 0.8f + 120.0f));
     if (CreateButton("TO MAIN MENU"))
     {
-        manager->ReplaceUI(UIState::MAIN);
+        manager->ReplaceUI(EUIState::MAIN);
     }
 
     ImGui::End();

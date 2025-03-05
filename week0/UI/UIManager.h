@@ -9,7 +9,7 @@
 #include "../ImGui/imgui.h"
 #include "../stb_image.h"
 
-enum class UIState
+enum class EUIState
 {
 	NONE,
 	MAIN,
@@ -40,10 +40,10 @@ public:
 	}
 
 	// 폰트를 로드하여 내부 맵에 저장하는 함수
-	ImFont* LoadFont(const char* filename, float sizePixel, const std::string& fontName)
+	ImFont* LoadFont(const char* filename, float sizePixel, const std::string& fontName, const ImWchar* fontGlyph = ImGui::GetIO().Fonts->GetGlyphRangesDefault())
 	{
 		ImFont* font = ImGui::GetIO().Fonts->AddFontFromFileTTF(
-			filename, sizePixel, nullptr, ImGui::GetIO().Fonts->GetGlyphRangesDefault());
+			filename, sizePixel, nullptr, fontGlyph);
 		if (font)
 		{
 			fonts_[fontName] = font;
@@ -184,14 +184,14 @@ public:
 
 	void Update();
 	void Release();
-	void ReplaceUI(UIState newState);
+	void ReplaceUI(EUIState newState);
 
     void TogglePause();
 
-    UIState GetCurrentState() { return currentState; }
+    EUIState GetCurrentState() { return currentState; }
 private:
 	ScreenSize screen;
-    UIState currentState = UIState::NONE;
+    EUIState currentState = EUIState::NONE;
 
 	UI* currentHUD = nullptr;
 

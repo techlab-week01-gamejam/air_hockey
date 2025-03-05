@@ -1,4 +1,5 @@
 #include "GameUI.h"
+#include "../GameManager.h"
 
 void GameUI::Render()
 {
@@ -16,13 +17,17 @@ void GameUI::Render()
         ImGuiWindowFlags_NoResize |
         ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoScrollbar |
+        ImGuiWindowFlags_NoScrollWithMouse |
         ImGuiWindowFlags_NoCollapse;
 
 	ImGui::Begin("Game Window", nullptr, window_flags);
     ImGui::PushFont(FontManager::Get().GetFont("chewy72"));
 
-    const char* redPlayerScore = "0";
-    const char* bluePlayerScore = "0";
+    std::string score1 = std::to_string(GameManager::Get().GetPlayer1Score());
+    std::string score2 = std::to_string(GameManager::Get().GetPlayer2Score());
+
+    const char* Player1Score = score1.c_str();
+    const char* Player2Score = score2.c_str();
 
     // 화면 가로 크기(DisplaySize.x)와 상단 영역 높이(topAreaHeight)를 이용한 피봇 위치 계산
     float leftPivotX = DisplaySize.x * 0.25f;   // 화면 왼쪽 점수의 피봇 (25% 지점)
@@ -32,16 +37,16 @@ void GameUI::Render()
     float pivotY = topAreaHeight * 0.25f;         // 예시: 상단 영역의 25% 위치
 
     // 각 텍스트의 크기를 계산합니다.
-    ImVec2 redScoreSize = ImGui::CalcTextSize(redPlayerScore);
+    ImVec2 redScoreSize = ImGui::CalcTextSize(Player1Score);
     ImVec2 colonSize = ImGui::CalcTextSize(":");
-    ImVec2 blueScoreSize = ImGui::CalcTextSize(bluePlayerScore);
+    ImVec2 blueScoreSize = ImGui::CalcTextSize(Player2Score);
 
     // 각 텍스트의 중앙(0.5,0.5)을 피봇으로 하여 위치를 결정
     // 왼쪽 점수
     float redPosX = leftPivotX - redScoreSize.x * 0.5f;
     float redPosY = pivotY - redScoreSize.y * 0.5f;
     ImGui::SetCursorPos(ImVec2(redPosX, redPosY));
-    ImGui::Text("%s", redPlayerScore);
+    ImGui::Text("%s", Player1Score);
 
     // 콜론
     float colonPosX = centerPivotX - colonSize.x * 0.5f;
@@ -53,7 +58,7 @@ void GameUI::Render()
     float bluePosX = rightPivotX - blueScoreSize.x * 0.5f;
     float bluePosY = pivotY - blueScoreSize.y * 0.5f;
     ImGui::SetCursorPos(ImVec2(bluePosX, bluePosY));
-    ImGui::Text("%s", bluePlayerScore);
+    ImGui::Text("%s", Player2Score);
 
     ImGui::PopFont();
     ImGui::End();
