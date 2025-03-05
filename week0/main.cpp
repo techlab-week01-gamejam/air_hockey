@@ -18,7 +18,10 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "imGui/imgui_impl_win32.h"
 
-
+#include "SoundManager.h"
+#include "TextureManager.h"
+#include "SpriteAnimationManager.h" 
+#include "vector3.h"
 #include "UI/UIManager.h"
 #include "GameManager.h"
 bool bUseGravity = false; // 중력 적용 여부 (기본 OFF)
@@ -88,6 +91,7 @@ FVertexSimple cube_vertices[] =
     {  0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 0.0f },
     {  0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 8.0f, 8.0f },
 };
+
 
 
 // Structure for a 3D vector
@@ -194,6 +198,7 @@ public:
     ID3D11RenderTargetView* FrameBufferRTV = nullptr; // 텍스처를 렌더 타겟으로 사용하는 뷰
     ID3D11RasterizerState* RasterizerState = nullptr; // 래스터라이저 상태(컬링, 채우기 모드 등 정의)
     ID3D11Buffer* ConstantBuffer = nullptr; // 쉐이더에 데이터를 전달하기 위한 상수 버퍼
+    ID3D11BlendState* AlphaBlendState = nullptr;
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f }; // 화면을 초기화(clear)할 때 사용할 색상 (RGBA)
     D3D11_VIEWPORT ViewportInfo; // 렌더링 영역을 정의하는 뷰포트 정보
@@ -230,7 +235,7 @@ public:
         CreateRasterizerState();
 
         // 깊이 스텐실 버퍼 및 블렌드 상태는 이 코드에서는 다루지 않음
-
+        CreateBlendState();
         // 샘플러 생성
         CreateSamplerState();
 
@@ -380,6 +385,11 @@ public:
 
         ReleaseFrameBuffer();
         ReleaseDeviceAndSwapChain();
+
+		if (AlphaBlendState) {
+			AlphaBlendState->Release();
+			AlphaBlendState = nullptr;
+		}
     }
 
     // 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
@@ -447,8 +457,8 @@ public:
         DeviceContext->RSSetState(RasterizerState);
 
         DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
-        DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
 
+        DeviceContext->OMSetBlendState(AlphaBlendState, nullptr, 0xffffffff);
     }
 
     void PrepareShader()
@@ -540,6 +550,31 @@ public:
             }
             DeviceContext->Unmap(ConstantBuffer, 0);
         }
+    }
+
+    void CreateBlendState() {
+        D3D11_BLEND_DESC blendDesc = {};
+        ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
+
+        // ��� ���� Ÿ�꿡 ������ ������ �ɼ��� ����
+        blendDesc.AlphaToCoverageEnable = FALSE;
+        blendDesc.IndependentBlendEnable = FALSE;
+        blendDesc.RenderTarget[0].BlendEnable = TRUE;
+
+        // �ҽ� ���Ŀ� ���ҽ� ���ĸ� �̿��� �������� ���
+        blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+        blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+        blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+
+        // ���� ä�ο� ���ؼ��� ������ ���� ����
+        blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+        blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+        blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+
+        // RGBA ��� ����
+        blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+        HRESULT hr = Device->CreateBlendState(&blendDesc, &AlphaBlendState);
     }
 };
 
@@ -639,6 +674,7 @@ public:
 
         if (Distance < MinDist) // 충돌 발생
         {
+
             // 충돌 후 속도 교환 (탄성 충돌 공식 적용)
             FVector3 Normal = Diff / Distance;
             FVector3 RelativeVelocity = Velocity - Other.Velocity;
@@ -656,6 +692,10 @@ public:
 
             Location += Correction;
             Other.Location -= Correction;
+
+            // �ִϸ��̼� ���� (�浹 ��������)
+            FVector3 CollisionPoint = (Location + Other.Location) * 0.5f;
+            SpriteAnimationManager::GetInstance()->PlayAnimation("Hit1", CollisionPoint, 0.2f);
         }
     }
 
@@ -1231,6 +1271,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         CW_USEDEFAULT, CW_USEDEFAULT, 1024, 1024,
         nullptr, nullptr, hInstance, nullptr);
 
+
+    FMOD::System* system;
+    FMOD::System_Create(&system);
+
+
     // Renderer Class를 생성합니다.
     URenderer	renderer;
 
@@ -1314,6 +1359,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     LARGE_INTEGER startTime, endTime;
     double elapsedTime = 0.0;
+    double deltaTime = 0.0f;
+
+    /* SoundManager Init */
+    SoundManager* SoundMgr = SoundManager::GetInstance();
+
+    if (!SoundMgr->Initialize()) {
+        return -1;
+    }
+
+    SoundMgr->LoadSound("Hit", "hit.mp3");
+
+    /* TextureManager �ʱ�ȭ*/
+    TextureManager::GetInstance()->Initiallize(renderer.Device, renderer.DeviceContext);
+
+	/* SpriteAnimationManager �ʱ�ȭ */ 
+    SpriteAnimationManager::GetInstance()->Initialize(renderer.Device);
+
+    // �ִϸ��̼� ���
+	SpriteAnimationManager::GetInstance()->RegisterAnimation("Hit1", "hit_1.png", 1, 5, 0.05f, renderer.Device);
+    SpriteAnimationManager::GetInstance()->RegisterAnimation("Hit2", "hit_2.png", 1, 4, 0.05f, renderer.Device);
 
     //플레이어A, B 이동속도
     float moveA = 0.03f;
@@ -1533,7 +1598,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     }
                 }
             }
-
+        }
+      
             // 플레이어 A 조작 (W, S)
             if (GetAsyncKeyState(0x57) & 0x8000 && CorkA->Location.y + moveA < 0.405f) { // W 키 (위로 이동)
                 if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
