@@ -584,29 +584,30 @@ public:
         const float topBorder = 0.475f - Radius;
         const float bottomBorder = -0.475f + Radius;
 
-        if (Location.x < leftBorder)
+        if (Location.x < leftBorder && (Location.y > leftHole || Location.y < -leftHole))
         {
-            if (leftHole > Location.y && Location.y > -(leftHole))
-            {
-                Velocity = (0.0f);
-                scoreB++;
-                GameManager::Get().AddScore(EPlayer::Player2);
-                return 'B';
-            }
             Location.x = leftBorder;  // 위치 보정
             Velocity.x *= -0.95f;      // 반사
         }
-        else if (Location.x > rightBorder)
+        else if (Location.x > rightBorder && (Location.y > leftHole || Location.y < -leftHole))
         {
-            if (rightHole > Location.y && Location.y > -(rightHole))
-            {
-                Velocity = (0.0f);
-                scoreA++;
-                GameManager::Get().AddScore(EPlayer::Player1);
-                return 'A';
-            }
             Location.x = rightBorder;
             Velocity.x *= -0.95f;
+        }
+
+        if (Location.x < leftBorder - 4 * Radius) {
+            Velocity = (0.0f);
+            scoreB++;
+            GameManager::Get().AddScore(EPlayer::Player2);
+            Sleep(1000);
+            return 'B';
+        }
+        if (Location.x > rightBorder + 4 * Radius) {
+            Velocity = (0.0f);
+            scoreA++;
+            GameManager::Get().AddScore(EPlayer::Player1);
+            Sleep(1000);
+            return 'A';
         }
 
         if (Location.y > topBorder)
@@ -1308,14 +1309,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // A의 초기 위치 및 목표 위치 설정
     float initialXA = CorkA->Location.x; // A의 원래 위치
-    float targetXA = CorkA->Location.x + 0.6f; // A가 이동할 목표 위치
+    float targetXA = CorkA->Location.x + 0.78f; // A가 이동할 목표 위치
 
     bool isMovingRightA = false;  // A가 오른쪽으로 이동 중인지
     bool isReturningA = false;    // A가 원래 위치로 돌아오는 중인지
 
     // B의 초기 위치 및 목표 위치 설정
     float initialXB = CorkB->Location.x; // B의 원래 위치
-    float targetXB = CorkB->Location.x - 0.6f; // B가 이동할 목표 위치
+    float targetXB = CorkB->Location.x - 0.78f; // B가 이동할 목표 위치
 
     bool isMovingLeftB = false;  // B가 왼쪽으로 이동 중인지
     bool isReturningB = false;   // B가 원래 위치로 돌아오는 중인지
