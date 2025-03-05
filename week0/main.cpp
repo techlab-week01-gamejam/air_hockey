@@ -660,93 +660,6 @@ public:
     }
 };
 
-class UCork
-{
-public:
-    FVector3 Location;  // 콕의 위치
-    FVector3 Velocity;  // 콕의 속도
-    float Radius;       // 콕의 반지름
-    float Mass;         // 콕의 질량
-    int PlayerFlag;     // 콕이 어떤 플레이어인지 나타내는 플래그
-    ID3D11Buffer* VertexBuffer;  // 버텍스 버퍼
-    URenderer* Renderer;
-    ManagedTexture Texture;
-
-    UCork(FVector3 Location, float Radius, float Mass, int PlayerFlag, URenderer* renderer) : Location(Location), Radius(Radius), Mass(Mass), PlayerFlag(PlayerFlag)
-    {
-        Renderer = renderer;
-        VertexBuffer = Renderer->CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
-        Texture = TextureLoader::Get().GetTexture("sample2");
-    }
-
-    void SetLocationY(float deltaY)
-    {
-        Location.y += deltaY;
-    }
-
-    void SetVelocityY(float deltaY)
-    {
-        Velocity.y = deltaY;
-    }
-
-    void SetLocationX(float deltaX)
-    {
-        Location.x += deltaX;
-    }
-
-    void SetVelocityX(float deltaX)
-    {
-        Velocity.x = deltaX;
-    }
-
-    void SetInit(FVector3 location)
-    {
-        Location = location;
-        Velocity = (0.0f);
-    }
-
-    void Render()
-    {
-        if (nullptr == VertexBuffer)
-            return;
-
-        Renderer->DeviceContext->PSSetShaderResources(0, 1, &Renderer->CorkTexture);
-        Renderer->UpdateConstant(Location, Radius);
-        Renderer->RenderPrimitive(VertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
-    }
-
-    // Cork와 Ball 사이의 충돌 처리
-    void ResolveCollision(UBall& Other)
-    {
-        FVector3 Diff = Location - Other.Location;
-        float Distance = sqrt(Diff.x * Diff.x + Diff.y * Diff.y);
-        float MinDist = Radius + Other.Radius;
-
-        if (Distance < MinDist) // 충돌 발생
-        {
-            FVector3 Normal = (Distance > 1e-6f) ? (Diff / Distance) : FVector3(0, 0, 0);
-            FVector3 RelativeVelocity = Velocity - Other.Velocity;
-            float Speed = (RelativeVelocity.x * Normal.x + RelativeVelocity.y * Normal.y);
-
-            // 겹쳐 있을 때도 충돌 처리를 강제 실행
-            if (Speed > 0 && Distance >= MinDist) return;
-
-            float Impulse = 2.0f * Speed / (Mass + Other.Mass);
-            Other.Velocity += Normal * Impulse * Mass;
-
-            // 위치 보정 추가 (공이 너무 겹치는 문제 방지)
-            float Overlap = MinDist - Distance;
-            FVector3 Correction = Normal * (Overlap / 2.0f);
-
-            Other.Location -= Correction;
-
-            // 공에게 마지막으로 공격한 플레이어가 누구인지 전달
-            Other.SetPlayerFlag(PlayerFlag);
-
-        }
-    }
-};
-
 enum class EItem
 {
     TwoBalls,
@@ -965,6 +878,7 @@ public:
         if (nullptr == VertexBuffer)
             return;
 
+        Renderer->DeviceContext->PSSetShaderResources(0, 1, &Renderer->CorkTexture);
         Renderer->UpdateConstant(Location, Radius);
         Renderer->RenderPrimitive(VertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
     }
