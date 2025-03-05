@@ -17,6 +17,11 @@
 
 bool bUseGravity = false; // 중력 적용 여부 (기본 OFF)
 float Gravity = -0.001f; // 중력 가속도 값 (음수 값: 아래 방향)
+float leftHole = 0.2f;
+float rightHole = 0.2f;
+int scoreA = 0;
+int scoreB = 0;
+char isGoal;
 
 // 1. Define the triangle vertices
 struct FVertexSimple {
@@ -470,17 +475,28 @@ public:
     }
 
     // 벽과의 충돌 처리
-    void CheckWallCollision() {
+    char CheckWallCollision() {
         const float leftBorder = -0.95f + Radius;
         const float rightBorder = 0.95f - Radius;
         const float topBorder = 0.475f - Radius;
         const float bottomBorder = -0.475f + Radius;
 
         if (Location.x < leftBorder) {
+            if (leftHole > Location.y && Location.y > -(leftHole)) {
+                Velocity = (0.0f);
+                scoreB++;
+
+                return 'B';
+            }
             Location.x = leftBorder;  // 위치 보정
             Velocity.x *= -0.95f;      // 반사
         }
         else if (Location.x > rightBorder) {
+            if (rightHole > Location.y && Location.y > -(rightHole)) {
+                Velocity = (0.0f);
+                scoreA++;
+                return 'A';
+            }
             Location.x = rightBorder;
             Velocity.x *= -0.95f;
         }
@@ -541,8 +557,12 @@ public:
     float Radius;       // 콕의 반지름
     float Mass;         // 콕의 질량
     int PlayerFlag;     // 콕이 어떤 플레이어인지 나타내는 플래그
-
-    UCork(FVector3 Location, float Radius, float Mass, int PlayerFlag) : Location(Location), Radius(Radius), Mass(Mass), PlayerFlag(PlayerFlag) {}
+    ID3D11Buffer* VertexBuffer;  // 버텍스 버퍼
+    URenderer* Renderer;
+    UCork(FVector3 Location, float Radius, float Mass, int PlayerFlag, URenderer* renderer) : Location(Location), Radius(Radius), Mass(Mass), PlayerFlag(PlayerFlag) {
+        Renderer = renderer;
+        VertexBuffer = Renderer->CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
+    }
 
     void SetLocationY(float deltaY) {
         Location.y += deltaY;
@@ -558,6 +578,19 @@ public:
 
     void SetVelocityX(float deltaX) {
         Velocity.x = deltaX;
+    }
+
+    void SetInit(FVector3 location) {
+        Location = location;
+        Velocity = (0.0f);
+    }
+
+    void Render() {
+        if (nullptr == VertexBuffer)
+            return;
+
+        Renderer->UpdateConstant(Location, Radius);
+        Renderer->RenderPrimitive(VertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
     }
 
     // Cork와 Ball 사이의 충돌 처리
@@ -802,7 +835,15 @@ public:
 
         for (int i = 0; i < BallCount; i++) {
             BallList[i]->Move();
-            BallList[i]->CheckWallCollision();
+            isGoal = BallList[i]->CheckWallCollision();
+            if (isGoal == 'A' || isGoal == 'B') {
+                for (int j = 0; j < BallCount; j++)
+                    RemoveBall();
+                AddBall(FVector3(0.0f));
+                CorkA->SetInit(FVector3(-0.875f, 0.0f, 0.0f));
+                CorkB->SetInit(FVector3(0.875f, 0.0f, 0.0f));
+                break;
+            }
             CorkA->ResolveCollision(*BallList[i]);
             CorkB->ResolveCollision(*BallList[i]);
 
@@ -963,12 +1004,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     FVector3 offsetHorizontal(0.0f, 0.5f, 0.0f);
     FVector3 offsetVertical(-1.0f, 0.0f, 0.0f);
 
-    ID3D11Buffer* vertexBufferPlayerA = renderer.CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
-    ID3D11Buffer* vertexBufferPlayerB = renderer.CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
+    // 골대 A, B
+    FVertexSimple holeA[36];
+    FVertexSimple holeB[36];
 
-    // 플레이어1, 플레이어2 offset
-    FVector3 offsetPlayerA(-0.875f, 0.0f, 0.0f);
-    FVector3 offsetPlayerB(0.875f, 0.0f, 0.0f);
+    for (UINT i = 0; i < numVerticeCube; i++)
+    {
+        //골대 스케일링
+        holeA[i] = cube_vertices[i];
+        holeA[i].x *= 0.1f;
+        holeA[i].y *= leftHole * 2;
+        holeA[i].r = 0.025f; holeA[i].g = 0.025f; holeA[i].b = 0.025f; holeA[i].a = 1.0f;
+
+        holeB[i] = cube_vertices[i];
+        holeB[i].x *= 0.1f;
+        holeB[i].y *= rightHole * 2;
+        holeB[i].r = 0.025f; holeB[i].g = 0.025f; holeB[i].b = 0.025f; holeB[i].a = 1.0f;
+    }
+    ID3D11Buffer* vertexBufferHoleA = renderer.CreateVertexBuffer(holeA, sizeof(holeA));
+    ID3D11Buffer* vertexBufferHoleB = renderer.CreateVertexBuffer(holeB, sizeof(holeB));
+
+    FVector3 offsetHoleA(-1.0f, 0.0f, 0.0f);
+    FVector3 offsetHoleB(1.0f, 0.0f, 0.0f);
 
     bool bIsExit = false;
 
@@ -995,19 +1052,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     float moveB = 0.03f;
 
     // 플레이어 Cork
-    UCork* CorkA = new UCork(FVector3(-0.875f, 0.0f, 0.0f), 0.07f, 35.0f, 1);
-    UCork* CorkB = new UCork(FVector3(0.875f, 0.0f, 0.0f), 0.07f, 35.0f, 2);
+    UCork* CorkA = new UCork(FVector3(-0.875f, 0.0f, 0.0f), 0.07f, 35.0f, 1, &renderer);
+    UCork* CorkB = new UCork(FVector3(0.875f, 0.0f, 0.0f), 0.07f, 35.0f, 2, &renderer);
 
     // A의 초기 위치 및 목표 위치 설정
-    float initialXA = offsetPlayerA.x; // A의 원래 위치
-    float targetXA = offsetPlayerA.x + 0.6f; // A가 이동할 목표 위치
+    float initialXA = CorkA->Location.x; // A의 원래 위치
+    float targetXA = CorkA->Location.x + 0.6f; // A가 이동할 목표 위치
 
     bool isMovingRightA = false;  // A가 오른쪽으로 이동 중인지
     bool isReturningA = false;    // A가 원래 위치로 돌아오는 중인지
 
     // B의 초기 위치 및 목표 위치 설정
-    float initialXB = offsetPlayerB.x; // B의 원래 위치
-    float targetXB = offsetPlayerB.x - 0.6f; // B가 이동할 목표 위치
+    float initialXB = CorkB->Location.x; // B의 원래 위치
+    float targetXB = CorkB->Location.x - 0.6f; // B가 이동할 목표 위치
 
     bool isMovingLeftB = false;  // B가 왼쪽으로 이동 중인지
     bool isReturningB = false;   // B가 원래 위치로 돌아오는 중인지
@@ -1033,38 +1090,34 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
         }
 
-        if (GetAsyncKeyState(0x57) & 0x8000 && offsetPlayerA.y + moveA < 0.405f) {
-            offsetPlayerA.y += moveA;
+        if (GetAsyncKeyState(0x57) & 0x8000 && CorkA->Location.y + moveA < 0.405f) {
             CorkA->SetLocationY(moveA);
             CorkA->SetVelocityY(moveA);
         }
-        if (GetAsyncKeyState(0x53) & 0x8000 && offsetPlayerA.y - moveA > -0.405f) {
-            offsetPlayerA.y -= moveA;
+        if (GetAsyncKeyState(0x53) & 0x8000 && CorkA->Location.y - moveA > -0.405f) {
             CorkA->SetLocationY(-moveA);
             CorkA->SetVelocityY(-moveA);
         }
-        if (GetAsyncKeyState(VK_UP) & 0x8000 && offsetPlayerB.y + moveB < 0.405f) {
-            offsetPlayerB.y += moveB;
+        if (GetAsyncKeyState(VK_UP) & 0x8000 && CorkB->Location.y + moveB < 0.405f) {
             CorkB->SetLocationY(moveB);
             CorkB->SetVelocityY(moveB);
         }
-        if (GetAsyncKeyState(VK_DOWN) & 0x8000 && offsetPlayerB.y - moveB > -0.405f) {
-            offsetPlayerB.y -= moveB;
+        if (GetAsyncKeyState(VK_DOWN) & 0x8000 && CorkB->Location.y - moveB > -0.405f) {
             CorkB->SetLocationY(-moveB);
             CorkB->SetVelocityY(-moveB);
         }
-        if (GetAsyncKeyState(VK_LSHIFT) & 0x8000 && !isMovingRightA && !isReturningA) {
+        //왼쪽 컨트롤키
+        if (GetAsyncKeyState(VK_LCONTROL) & 0x8000 && !isMovingRightA && !isReturningA) {
             isMovingRightA = true;
         }
-
-        if (GetAsyncKeyState(VK_RSHIFT) & 0x8000 && !isMovingLeftB && !isReturningB) {
+        //엔터키
+        if (GetAsyncKeyState(VK_RETURN) & 0x8000 && !isMovingLeftB && !isReturningB) {
             isMovingLeftB = true;
         }
 
         // A가 오른쪽으로 이동 중이라면
         if (isMovingRightA) {
-            if (offsetPlayerA.x < targetXA) {
-                offsetPlayerA.x += 0.06f; // x 방향 이동 (속도)
+            if (CorkA->Location.x < targetXA) {
                 CorkA->SetLocationX(0.06f);
                 CorkA->SetVelocityX(0.06f);
             }
@@ -1076,8 +1129,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         // A가 원래 위치로 돌아오는 중이라면
         if (isReturningA) {
-            if (offsetPlayerA.x > initialXA) {
-                offsetPlayerA.x -= 0.06f; // x 방향 복귀 (속도)
+            if (CorkA->Location.x > initialXA) {
                 CorkA->SetLocationX(-0.06f);
                 CorkA->SetVelocityX(-0.06f);
             }
@@ -1088,8 +1140,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         // B가 왼쪽으로 이동 중이라면
         if (isMovingLeftB) {
-            if (offsetPlayerB.x > targetXB) {
-                offsetPlayerB.x -= 0.06f; // x 방향 이동 (속도)
+            if (CorkB->Location.x > targetXB) {
                 CorkB->SetLocationX(-0.06f);
                 CorkB->SetVelocityX(-0.06f);
             }
@@ -1101,8 +1152,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         // B가 원래 위치로 돌아오는 중이라면
         if (isReturningB) {
-            if (offsetPlayerB.x < initialXB) {
-                offsetPlayerB.x += 0.06f; // x 방향 복귀 (속도)
+            if (CorkB->Location.x < initialXB) {
                 CorkB->SetLocationX(0.06f);
                 CorkB->SetVelocityX(0.06f);
             }
@@ -1142,18 +1192,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         renderer.UpdateConstant(offsetVertical, 1.0f);
         renderer.RenderPrimitive(vertexBufferVertical, numVerticeCube);
 
+        //홀 렌더링
+        renderer.UpdateConstant(offsetHoleA, 1.0f);
+        renderer.RenderPrimitive(vertexBufferHoleA, numVerticeCube);
+        renderer.UpdateConstant(offsetHoleB, 1.0f);
+        renderer.RenderPrimitive(vertexBufferHoleB, numVerticeCube);
+
         //플레이어A 렌더링
-        renderer.UpdateConstant(offsetPlayerA, 0.07f);
-        renderer.RenderPrimitive(vertexBufferPlayerA, sizeof(sphere_vertices) / sizeof(FVertexSimple));
+        CorkA->Render();
 
         //플레이어B 렌더링
-        renderer.UpdateConstant(offsetPlayerB, 0.07f);
-        renderer.RenderPrimitive(vertexBufferPlayerB, sizeof(sphere_vertices) / sizeof(FVertexSimple));
+        CorkB->Render();
 
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
-        
+
         // 이후 ImGui UI 컨트롤 추가는 ImGui::NewFrame()과 ImGui::Render() 사이인 여기에 위치합니다.
         ImGui::Begin("Jungle Property Window");
 
@@ -1186,6 +1240,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // ReleaseShader() 직전에 소멸 함수를 추가합니다.
     renderer.ReleaseConstantBuffer();
+    renderer.ReleaseVertexBuffer(vertexBufferHorizontal);
+    renderer.ReleaseVertexBuffer(vertexBufferVertical);
+    renderer.ReleaseVertexBuffer(vertexBufferHoleA);
+    renderer.ReleaseVertexBuffer(vertexBufferHoleB);
     renderer.ReleaseShader();
     renderer.Release();
 
