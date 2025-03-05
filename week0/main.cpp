@@ -207,7 +207,8 @@ public:
     
     ID3D11ShaderResourceView* PrimaryTexture = nullptr;
 
-    ID3D11ShaderResourceView* CorkTexture = nullptr;
+    ID3D11ShaderResourceView* CorkATexture = nullptr;
+    ID3D11ShaderResourceView* CorkBTexture = nullptr;
     ID3D11ShaderResourceView* BallTexture = nullptr;
     ID3D11ShaderResourceView* WallTexture = nullptr;
     ID3D11ShaderResourceView* HoleTexture = nullptr;
@@ -234,8 +235,9 @@ public:
 
         // Texture Preload
         TextureLoader::Get().LoadTextureFromFile("./textures/sample.jpg", &PrimaryTexture, "sample"); // 기본
-        TextureLoader::Get().LoadTextureFromFile("./textures/cork.jpg", &CorkTexture, "cork"); // 콕
-        TextureLoader::Get().LoadTextureFromFile("./textures/ball.jpg", &BallTexture, "ball"); // 볼
+        TextureLoader::Get().LoadTextureFromFile("./textures/cork.png", &CorkATexture, "cork"); // 콕
+        TextureLoader::Get().LoadTextureFromFile("./textures/cork2.png", &CorkBTexture, "cork2"); // 콕
+        TextureLoader::Get().LoadTextureFromFile("./textures/ball.png", &BallTexture, "ball"); // 볼
         TextureLoader::Get().LoadTextureFromFile("./textures/wall.jpg", &WallTexture, "wall"); // 벽
         TextureLoader::Get().LoadTextureFromFile("./textures/hole.jpg", &HoleTexture, "hole"); // 홀
     }
@@ -878,7 +880,9 @@ public:
         if (nullptr == VertexBuffer)
             return;
 
-        Renderer->DeviceContext->PSSetShaderResources(0, 1, &Renderer->CorkTexture);
+        ID3D11ShaderResourceView* finalTexture = (PlayerFlag == 1) ? Renderer->CorkATexture : Renderer->CorkBTexture;
+        
+        Renderer->DeviceContext->PSSetShaderResources(0, 1, &finalTexture);
         Renderer->UpdateConstant(Location, Radius);
         Renderer->RenderPrimitive(VertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
     }
