@@ -19,8 +19,6 @@ void UIManager::Initialize(ID3D11Device* Device, ID3D11DeviceContext* DeviceCont
     ImGui_ImplWin32_Init((void*)hWnd);
     ImGui_ImplDX11_Init(Device, DeviceContext);
 
-    TextureLoader::Get().g_pd3dDevice = Device;
-    
     PrepareFonts();
     PrepareTexture();
 }
