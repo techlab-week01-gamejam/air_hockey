@@ -99,6 +99,11 @@ void UIManager::PrepareFonts()
 void UIManager::PrepareTexture()
 {
     ID3D11ShaderResourceView* mainBackgroundTexture;
-    bool ret = TextureLoader::Get().LoadTextureFromFile("./textures/hockey.png", &mainBackgroundTexture, "main");
-    IM_ASSERT(ret);
+    TextureLoader::Get().LoadTextureFromFile("./textures/hockey.png", &mainBackgroundTexture, "main");
+    
+    ID3D11ShaderResourceView* jungleTexture;
+    TextureLoader::Get().LoadTextureFromFile("./textures/jungle.png", &jungleTexture, "jungle");
+
+    ID3D11ShaderResourceView* universeTexture;
+    TextureLoader::Get().LoadTextureFromFile("./textures/background.jpg", &universeTexture, "universe");
 }

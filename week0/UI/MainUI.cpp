@@ -22,6 +22,22 @@ void MainUI::Render()
     ImGuiIO& io = ImGui::GetIO();
     ImVec2 windowSize = io.DisplaySize;
 
+    //// 이미지 설정 : Universe
+    //ImGui::SetCursorPos(ImVec2(0, 0));
+    //ManagedTexture universe = TextureLoader::Get().GetTexture("universe");
+    //ImGui::Image((ImTextureID)(intptr_t)universe.texture, ImVec2(windowSize.x, windowSize.y));
+
+    // 이미지 설정 : JUNGLE
+    ImGui::SetCursorPos(ImVec2(0, windowSize.y - 430));
+    ManagedTexture jungle = TextureLoader::Get().GetTexture("jungle");
+    ImGui::Image((ImTextureID)(intptr_t)jungle.texture, ImVec2(windowSize.x, jungle.height * 0.5f));
+
+    // 이미지 설정 : HOCKEY PLAYER
+    ImGui::SetCursorPos(ImVec2(windowSize.x - 480, windowSize.y - 480));
+    ManagedTexture main = TextureLoader::Get().GetTexture("main");
+    ImGui::Image((ImTextureID)(intptr_t)main.texture, ImVec2(480, 480));
+
+
     // 메인 타이틀
     const char* title = "AIR HOCKEY";
     ImGui::PushFont(FontManager::Get().GetFont("chewy120"));
@@ -29,13 +45,6 @@ void MainUI::Render()
     ImGui::SetCursorPos(ImVec2((windowSize.x - textSize.x) * 0.5f, 200));
     ImGui::Text("%s", title);
     ImGui::PopFont();
-
-
-    // 이미지 설정
-    ImGui::SetCursorPos(ImVec2(windowSize.x - 480, windowSize.y - 480));
-    ManagedTexture main = TextureLoader::Get().GetTexture("main");
-    ImGui::Image((ImTextureID)(intptr_t)main.texture, ImVec2(480, 480));
-
 
     // 버튼 크기와 버튼 사이의 패딩 값 설정
     ImVec2 buttonSize = ImVec2(250, 120);
