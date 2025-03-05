@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <ctime>
 
 // D3D 사용에 필요한 라이브러리들을 링크합니다.
 #pragma comment(lib, "user32")
@@ -433,6 +434,10 @@ public:
     }
 };
 
+// 랜덤 실수 생성
+float RandomFloat(float Min, float Max) {
+    return Min + static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * (Max - Min);
+}
 
 class UBall {
 public:
@@ -440,13 +445,14 @@ public:
     FVector3 Velocity;  // 공의 속도
     float Radius;       // 공의 반지름
     float Mass;         // 공의 질량
+    int PlayerFlag;     // 마지막으로 공격한 플레이어
 
-    // 생성자: 임의의 크기, 위치, 속도를 가진 공 생성
-    UBall() {
-        Radius = RandomFloat(0.05f, 0.15f); // 0.05~0.15 사이의 임의 크기
+    UBall(FVector3 Location, FVector3 Velocity, float Radius) : Location(Location), Velocity(Velocity), Radius(Radius) {
         Mass = Radius * 10.0f; // 크기에 비례하는 질량
-        Location = FVector3(RandomFloat(-0.8f, 0.8f), RandomFloat(-0.8f, 0.8f), 0.0f);
-        Velocity = FVector3(0.02f, RandomFloat(-0.013f, 0.013f), 0.0f);
+    }
+
+    void SetPlayerFlag(int playerFlag) {
+        PlayerFlag = playerFlag;
     }
 
     // 공을 이동시키는 함수
@@ -454,11 +460,11 @@ public:
         Location.x += Velocity.x;
         Location.y += Velocity.y;
         if (Velocity.x > 0.001f)
-            Velocity.x -= 0.0001f;
+            Velocity.x -= 0.0004f;
         else if (Velocity.x < -0.001f)
             Velocity.x += 0.0001f;
         if (Velocity.y > 0.001f)
-            Velocity.y -= 0.0001f;
+            Velocity.y -= 0.0004f;
         else if (Velocity.y < -0.001f)
             Velocity.y += 0.0001f;
     }
@@ -472,29 +478,20 @@ public:
 
         if (Location.x < leftBorder) {
             Location.x = leftBorder;  // 위치 보정
-            Velocity.x *= -1.0f;      // 반사
+            Velocity.x *= -0.95f;      // 반사
         }
         else if (Location.x > rightBorder) {
             Location.x = rightBorder;
-            Velocity.x *= -1.0f;
+            Velocity.x *= -0.95f;
         }
 
         if (Location.y > topBorder) {
             Location.y = topBorder;
-            Velocity.y *= -1.0f;
+            Velocity.y *= -0.95f;
         }
         else if (Location.y < bottomBorder) {
             Location.y = bottomBorder;
-
-            if (bUseGravity) {
-                Velocity.y *= -0.8f; // 바닥 충돌 시 탄성 손실
-                if (fabs(Velocity.y) < 0.01f) { // 매우 작은 값이면 멈춤
-                    Velocity.y = 0.0f;
-                }
-            }
-            else {
-                Velocity.y *= -1.0f; // 중력이 없을 때는 완전 반사
-            }
+            Velocity.y *= -0.95f; // 중력이 없을 때는 완전 반사
         }
     }
 
@@ -523,8 +520,8 @@ public:
 
             Location += Correction;
             Other.Location -= Correction;
-            }
         }
+    }
 
     void Render(URenderer* renderer, ID3D11Buffer* vertexBuffer) {
         if (nullptr == vertexBuffer)
@@ -534,21 +531,18 @@ public:
         renderer->RenderPrimitive(vertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
     }
 
-    // 랜덤 실수 생성
-    float RandomFloat(float Min, float Max) {
-        return Min + static_cast<float>(rand()) / static_cast<float>(RAND_MAX / (Max - Min));
-    }
+
 };
 
 class UCork {
 public:
-    FVector3 Location;  // 공의 위치
-    FVector3 Velocity;  // 공의 속도
-    float Radius;       // 공의 반지름
-    float Mass;         // 공의 질량
+    FVector3 Location;  // 콕의 위치
+    FVector3 Velocity;  // 콕의 속도
+    float Radius;       // 콕의 반지름
+    float Mass;         // 콕의 질량
+    int PlayerFlag;     // 콕이 어떤 플레이어인지 나타내는 플래그
 
-    UCork(FVector3 Location, float Radius, float Mass) : Location(Location), Radius(Radius), Mass(Mass) {}
-
+    UCork(FVector3 Location, float Radius, float Mass, int PlayerFlag) : Location(Location), Radius(Radius), Mass(Mass), PlayerFlag(PlayerFlag) {}
 
     void SetLocationY(float deltaY) {
         Location.y += deltaY;
@@ -589,7 +583,137 @@ public:
             FVector3 Correction = Normal * (Overlap / 2.0f);
 
             Other.Location -= Correction;
+
+            // 공에게 마지막으로 공격한 플레이어가 누구인지 전달
+            Other.SetPlayerFlag(PlayerFlag);
+
         }
+    }
+};
+
+enum class EItem {
+    TwoBalls,
+    Slow,
+    MultipleGoals,
+    Stop,
+    TotalItemCount
+};
+
+EItem GetRandomItem() {
+    return static_cast<EItem>(rand() % static_cast<int>(EItem::TotalItemCount));
+}
+
+class UItem {
+public:
+    FVector3 Location;
+    EItem ItemType;
+
+    UItem(FVector3 Location, EItem ItemType) : Location(Location), ItemType(ItemType) {}
+
+    void Render(URenderer* renderer, ID3D11Buffer* vertexBuffer) {
+        if (nullptr == vertexBuffer)
+            return;
+
+        renderer->UpdateConstant(Location, 0.04f);
+        renderer->RenderPrimitive(vertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
+    }
+
+    // Item와 Ball 사이의 충돌 여부
+    bool IsCollisionWithItem(UBall& Other) {
+        FVector3 Diff = Location - Other.Location;
+        float Distance = sqrt(Diff.x * Diff.x + Diff.y * Diff.y);
+        float MinDist = 0.05f + Other.Radius;
+
+        if (Distance < MinDist) // 아이템과 공이 충돌하면
+        {
+            return true;
+        }
+
+        return false;
+    }
+};
+
+class UItemManager {
+public:
+    UItem** ItemList;
+    int ItemCount;
+    int Capacity;      // 배열의 최대 크기 (미리 할당된 공간)
+    URenderer* Renderer; // 렌더러 참조
+    ID3D11Buffer* VertexBuffer;  // 버텍스 버퍼
+    bool bMultipleBalls; // 공이 두개 있는지 여부
+
+    UItemManager(URenderer* renderer) {
+        ItemList = nullptr;
+        ItemCount = 0;
+        Capacity = 2;
+        Renderer = renderer;
+        VertexBuffer = nullptr;
+
+        ItemList = new UItem * [Capacity];
+
+        InitializeVertexBuffer();
+    }
+
+    void setbMultipleBalls(bool bMultiple) {
+        bMultipleBalls = bMultiple;
+    };
+
+    void AddItem() {
+        if (ItemCount <= Capacity) {
+            // 아이템 랜덤 뽑기
+            EItem newItem = GetRandomItem();
+            // 공이 두개이면 더 이상 TwoBalls 아이템이 나오지 않음
+            while (bMultipleBalls && newItem == EItem::TwoBalls) {
+                newItem = GetRandomItem();
+            }
+            ItemList[ItemCount] = new UItem(FVector3(RandomFloat(-0.9f, 0.9f), RandomFloat(-0.4f, 0.4f), 0.0f), EItem::TwoBalls);
+            ItemCount++;
+        }
+    }
+
+    void RemoveItem(UItem* Item) {
+        if (ItemCount == 0) return;
+
+        for (int i = 0; i < ItemCount; i++) {
+            if (ItemList[i] == Item) {
+                delete ItemList[i];
+                ItemList[i] = ItemList[ItemCount - 1];
+                ItemCount--;
+                return;
+            }
+        }
+
+    }
+
+    // 모든 아이템 렌더링
+    void RenderItems() {
+        for (int i = 0; i < ItemCount; i++) {
+            ItemList[i]->Render(Renderer, VertexBuffer);
+        }
+    }
+
+    // VertexBuffer 초기화
+    void InitializeVertexBuffer() {
+        if (nullptr == VertexBuffer) {
+            VertexBuffer = Renderer->CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
+        }
+    }
+
+    // Vertex Buffer 해제 (프로그램 종료 시 실행)
+    void ReleaseVertexBuffer() {
+        if (VertexBuffer) {
+            Renderer->ReleaseVertexBuffer(VertexBuffer);
+            VertexBuffer = nullptr;
+        }
+    }
+
+    // 소멸자 (모든 공 삭제)
+    ~UItemManager() {
+        for (int i = 0; i < ItemCount; i++) {
+            delete ItemList[i];
+        }
+        delete[] ItemList;
+        ReleaseVertexBuffer();
     }
 };
 
@@ -601,13 +725,15 @@ public:
     URenderer* Renderer; // 렌더러 참조
     ID3D11Buffer* VertexBuffer;  // 버텍스 버퍼
     int MaxSpeed = 0.05f;
+    UItemManager* ItemManager;
 
     // 생성자
-    UBallManager(URenderer* renderer) {
+    UBallManager(URenderer* renderer, UItemManager* itemManager) {
         BallList = nullptr;
         BallCount = 0;
         Capacity = 15;
         Renderer = renderer;
+        ItemManager = itemManager;
         VertexBuffer = nullptr;
 
         BallList = new UBall * [Capacity];
@@ -618,7 +744,7 @@ public:
     }
 
     // 공 추가 함수
-    void AddBall() {
+    void AddBall(FVector3 Location) {
         if (BallCount >= Capacity) {
             // 배열 크기를 2배로 확장
             Capacity *= 2;
@@ -632,7 +758,7 @@ public:
         }
 
         // 새 공 추가
-        BallList[BallCount] = new UBall();
+        BallList[BallCount] = new UBall(Location, FVector3(RandomFloat(-0.03f, 0.03f), RandomFloat(-0.02f, 0.02f), 0.0f), 0.05f);
         BallCount++;
     }
 
@@ -673,10 +799,23 @@ public:
             BallList[i]->CheckWallCollision();
             CorkA->ResolveCollision(*BallList[i]);
             CorkB->ResolveCollision(*BallList[i]);
+
+            for (int i = 0; i < ItemManager->ItemCount; i++) {
+                if (ItemManager->ItemList[i]->IsCollisionWithItem(*BallList[i])) {
+                    if (ItemManager->ItemList[i]->ItemType == EItem::TwoBalls) {
+                        AddBall(ItemManager->ItemList[i]->Location);
+                    }
+                    ItemManager->RemoveItem(ItemManager->ItemList[i]);
+                }
+            }
         }
 
         // 공이 1개 이하라면 충돌 연산 불필요
-        if (BallCount < 2) return;
+        if (BallCount < 2) {
+            ItemManager->setbMultipleBalls(false);
+            return;
+        }
+        ItemManager->setbMultipleBalls(true);
 
         // 충돌 감지 및 처리 (모든 공 쌍 확인)
         for (int i = 0; i < BallCount; i++) {
@@ -741,7 +880,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
     return 0;
 }
 
+DWORD WINAPI TimerThread(LPVOID lpParam) {
+    UItemManager* ItemManager = static_cast<UItemManager*>(lpParam);
+    while (true) {
+        if (ItemManager->ItemCount == 1) {
+            Sleep(10000);
+        }
+        else {
+            ItemManager->AddItem();
+            Sleep(10000);
+        }
+    }
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
+    srand(static_cast<unsigned int>(time(nullptr))); // 현재 시간을 기반으로 시드 설정
+
     // 윈도우 클래스 이름
     WCHAR WindowClass[] = L"JungleWindowClass";
 
@@ -768,8 +922,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     renderer.CreateShader();
     renderer.CreateConstantBuffer();
 
-    UBallManager BallManager(&renderer);
-    BallManager.AddBall();
+
+    UItemManager ItemManager(&renderer);
+    HANDLE hThread = CreateThread(NULL, 0, TimerThread, &ItemManager, 0, NULL);
+
+
+    UBallManager BallManager(&renderer, &ItemManager);
+    BallManager.AddBall(FVector3(0.0f, 0.0f, 0.0f));
+
+
 
     // 가로선 세로선 생성
     UINT numVerticeCube = sizeof(cube_vertices) / sizeof(FVertexSimple);
@@ -828,8 +989,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     float moveB = 0.03f;
 
     // 플레이어 Cork
-    UCork* CorkA = new UCork(FVector3(-0.875f, 0.0f, 0.0f), 0.07f, 35.0f);
-    UCork* CorkB = new UCork(FVector3(0.875f, 0.0f, 0.0f), 0.07f, 35.0f);
+    UCork* CorkA = new UCork(FVector3(-0.875f, 0.0f, 0.0f), 0.07f, 35.0f, 1);
+    UCork* CorkB = new UCork(FVector3(0.875f, 0.0f, 0.0f), 0.07f, 35.0f, 2);
 
     // A의 초기 위치 및 목표 위치 설정
     float initialXA = offsetPlayerA.x; // A의 원래 위치
@@ -945,7 +1106,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
 
         BallManager.UpdateBalls(CorkA, CorkB);
-        
+
         CorkA->SetVelocityY(0.0f);
         CorkB->SetVelocityY(0.0f);
 
@@ -959,6 +1120,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         renderer.PrepareShader();
 
         BallManager.RenderBalls();
+        ItemManager.RenderItems();
 
         //가로벽 렌더링
         renderer.UpdateConstant(offsetHorizontal, 1.0f);
@@ -990,30 +1152,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         ImGui::Begin("Jungle Property Window");
 
         ImGui::Text("Hello Jungle World!");
-
-        // 중력 체크박스 추가
-        ImGui::Checkbox("Use Gravity", &bUseGravity);
-
-        static int ballCountInput = BallManager.BallCount;  // 현재 공 개수 저장
-
-        // 공 개수 표시 및 수동 입력 가능
-        if (ImGui::InputInt("Number Of Balls", &ballCountInput)) {
-            // 공 개수를 입력한 값에 맞게 조정
-            if (ballCountInput < 0) ballCountInput = 0; // 음수 방지
-
-            if (ballCountInput > BallManager.BallCount) {
-                // 현재 개수보다 많으면 추가
-                while (BallManager.BallCount < ballCountInput) {
-                    BallManager.AddBall();
-                }
-            }
-            else if (ballCountInput < BallManager.BallCount) {
-                // 현재 개수보다 적으면 삭제
-                while (BallManager.BallCount > ballCountInput) {
-                    BallManager.RemoveBall();
-                }
-            }
-        }
 
         ImGui::End();
 
