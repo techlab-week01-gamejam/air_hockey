@@ -116,4 +116,7 @@ void UIManager::PrepareTexture()
 
     ID3D11ShaderResourceView* perkTexture;
     TextureLoader::Get().LoadTextureFromFile("./textures/perk.png", &perkTexture, "perk");
+
+    ID3D11ShaderResourceView* stadiumTexture;
+    TextureLoader::Get().LoadTextureFromFile("./textures/stadium.png", &stadiumTexture, "stadium");
 }

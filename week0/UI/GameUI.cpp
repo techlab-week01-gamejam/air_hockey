@@ -21,6 +21,13 @@ void GameUI::Render()
         ImGuiWindowFlags_NoCollapse;
 
 	ImGui::Begin("Game Window", nullptr, window_flags);
+
+    // 이미지 설정 : Stadium Background
+    ImGui::SetCursorPos(ImVec2(0, 0));
+    ManagedTexture stadium = TextureLoader::Get().GetTexture("stadium");
+    ImGui::Image((ImTextureID)(intptr_t)stadium.texture, ImVec2(stadium.width, stadium.height));
+
+
     ImGui::PushFont(FontManager::Get().GetFont("chewy72"));
 
     std::string score1 = std::to_string(GameManager::Get().GetPlayer1Score());
@@ -28,6 +35,8 @@ void GameUI::Render()
 
     const char* Player1Score = score1.c_str();
     const char* Player2Score = score2.c_str();
+    const char* Player1Text = "Player 1";
+    const char* Player2Text = "Player 2";
 
     // 화면 가로 크기(DisplaySize.x)와 상단 영역 높이(topAreaHeight)를 이용한 피봇 위치 계산
     float leftPivotX = DisplaySize.x * 0.25f;   // 화면 왼쪽 점수의 피봇 (25% 지점)
@@ -40,6 +49,8 @@ void GameUI::Render()
     ImVec2 redScoreSize = ImGui::CalcTextSize(Player1Score);
     ImVec2 colonSize = ImGui::CalcTextSize(":");
     ImVec2 blueScoreSize = ImGui::CalcTextSize(Player2Score);
+    ImVec2 player1Size = ImGui::CalcTextSize(Player1Text);
+    ImVec2 player2Size = ImGui::CalcTextSize(Player2Text);
 
     // 각 텍스트의 중앙(0.5,0.5)을 피봇으로 하여 위치를 결정
     // 왼쪽 점수
@@ -47,6 +58,13 @@ void GameUI::Render()
     float redPosY = pivotY - redScoreSize.y * 0.5f;
     ImGui::SetCursorPos(ImVec2(redPosX, redPosY));
     ImGui::Text("%s", Player1Score);
+
+    // Player 1 텍스트
+    redPosX = leftPivotX - player1Size.x * 0.5f;
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f)); // 빨강
+    ImGui::SetCursorPos(ImVec2(redPosX, 10.0f));
+    ImGui::Text("%s", "Player 1");
+    ImGui::PopStyleColor();
 
     // 콜론
     float colonPosX = centerPivotX - colonSize.x * 0.5f;
@@ -59,6 +77,13 @@ void GameUI::Render()
     float bluePosY = pivotY - blueScoreSize.y * 0.5f;
     ImGui::SetCursorPos(ImVec2(bluePosX, bluePosY));
     ImGui::Text("%s", Player2Score);
+
+    // Player 1 텍스트
+    bluePosX = rightPivotX - player2Size.x * 0.5f;
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.3f, 1.0f, 1.0f)); // 파랑
+    ImGui::SetCursorPos(ImVec2(bluePosX, 10.0f));
+    ImGui::Text("%s", "Player 2");
+    ImGui::PopStyleColor();
 
     ImGui::PopFont();
     ImGui::End();

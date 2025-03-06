@@ -155,11 +155,11 @@ public:
         TextureLoader::Get().LoadTextureFromFile("./textures/cork.png", &CorkATexture, "cork"); // 콕
         TextureLoader::Get().LoadTextureFromFile("./textures/cork2.png", &CorkBTexture, "cork2"); // 콕
         TextureLoader::Get().LoadTextureFromFile("./textures/ball.png", &BallTexture, "ball"); // 볼
-        TextureLoader::Get().LoadTextureFromFile("./textures/wall.jpg", &WallTexture, "wall"); // 벽
-        TextureLoader::Get().LoadTextureFromFile("./textures/hole.jpg", &HoleTexture, "hole"); // 홀
+        TextureLoader::Get().LoadTextureFromFile("./textures/ice.jpg", &WallTexture, "wall"); // 벽
+        TextureLoader::Get().LoadTextureFromFile("./textures/hole.jpg", &HoleTexture,  "hole"); // 홀
         TextureLoader::Get().LoadTextureFromFile("./textures/normal-item.png", &NormalItemTexture, "normalItem"); // 중립 아이템
-        TextureLoader::Get().LoadTextureFromFile("./textures/buff-item.jpg", &BuffItemTexture, "buffItem"); // 버프 아이템
-        TextureLoader::Get().LoadTextureFromFile("./textures/debuff-item.jpg", &DeBuffItemTexture, "debuffItem"); // 디버프 아이템
+        TextureLoader::Get().LoadTextureFromFile("./textures/buff-item.png", &BuffItemTexture, "buffItem"); // 버프 아이템
+        TextureLoader::Get().LoadTextureFromFile("./textures/debuff-item.png", &DeBuffItemTexture, "debuffItem"); // 디버프 아이템
     }
 
     void CreateSamplerState()
@@ -1355,6 +1355,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 #pragma region RenderSetup
         renderer.Prepare();
         renderer.PrepareShader();
+        // 최종 UI를 업데이트 합니다.
+        HUD->Update();
 #pragma endregion
 
 #pragma region GameSetup
@@ -1640,8 +1642,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }
 #pragma endregion
 
-        // 최종 UI를 업데이트 합니다.
-        HUD->Update();
+        
 
         // 현재 화면에 보여지는 버퍼와 그리기 작업을 위한 버퍼를 서로 교환합니다.
         renderer.SwapBuffer();
