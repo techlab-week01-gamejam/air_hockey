@@ -886,6 +886,13 @@ public:
 
             Other.Location -= Correction;
 
+            // 충돌시 사운드 재생
+            SoundManager::GetInstance()->PlaySFX("Hit");
+
+            // 충돌시 애니메이션 재생
+			FVector3 collisionPoint = (Location + Other.Location) * 0.5f;
+			SpriteAnimationManager::GetInstance()->PlayAnimation("Hit1", collisionPoint, 0.2f);
+
             // 공에게 마지막으로 공격한 플레이어가 누구인지 전달
             Other.SetPlayerFlag(PlayerFlag);
 
@@ -1584,6 +1591,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             BallManager.UpdateBalls(CorkA, CorkB);
 
+            //SoundManager Update
+			SoundManager::GetInstance()->Update();
+            
+			//SpriteAnimationManager Update
+            SpriteAnimationManager::GetInstance()->Update(deltaTime);
+
             CorkA->SetVelocityY(0.0f);
             CorkB->SetVelocityY(0.0f);
 
@@ -1637,6 +1650,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             BallManager.RenderBalls();
 
+			//SpriteAnimationManager 렌더링
+			SpriteAnimationManager::GetInstance()->Render(renderer.DeviceContext);
 
         }
 #pragma endregion
@@ -1656,6 +1671,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             // 한 프레임이 소요된 시간 계산 (밀리초 단위로 변환)
             elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
+			deltaTime = elapsedTime / 1000.0f; // 초 단위로 변환
 
         } while (elapsedTime < targetFrameTime);
     }
