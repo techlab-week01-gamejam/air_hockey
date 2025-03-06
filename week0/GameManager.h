@@ -61,7 +61,7 @@ private:
 	GameManager& operator=(const GameManager&) = delete;
 	~GameManager() {}
 
-	const int WIN_SCORE = 10;
+	const int WIN_SCORE = 1;
 
 	unsigned int player1Score = 0;
 	unsigned int player2Score = 0;

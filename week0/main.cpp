@@ -1680,7 +1680,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         #pragma endregion
 
 #pragma region Rendering
-        if (HUD->GetCurrentState() != EUIState::MAIN)
+        if (HUD->GetCurrentState() == EUIState::GAME)
         {
             //가로벽 렌더링
             renderer.DeviceContext->PSSetShaderResources(0, 1, &renderer.WallTexture);
