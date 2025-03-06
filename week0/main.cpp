@@ -746,7 +746,7 @@ public:
             {
                 newItem = GetRandomItem();
             }
-            ItemList[ItemCount] = new UItem(FVector3(RandomFloat(-0.9f, 0.9f), RandomFloat(-0.4f, 0.4f), 0.0f), EItem::WideGoal);
+            ItemList[ItemCount] = new UItem(FVector3(RandomFloat(-0.7f, 0.7f), RandomFloat(-0.4f, 0.4f), 0.0f), newItem);
             ItemCount++;
         }
     }
