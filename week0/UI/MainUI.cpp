@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "MainUI.h"
 #include "../GameManager.h"
+#include "../SoundManager.h"
 
 void MainUI::Render()
 {
@@ -87,6 +88,7 @@ void MainUI::Render()
     if (CreateButton("PLAY"))
     {
         GameManager::Get().StartNewGame();
+		SoundManager::GetInstance()->PlaySFX("GameStart");
     }
 
     // 두 번째 버튼은 첫 번째 버튼 바로 아래에 패딩을 더한 위치에 생성
