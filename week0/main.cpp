@@ -1587,10 +1587,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                             CorkA->SetVelocityX(-moveA);
                         }
                     }
-                    else {
+                    else if(BallManager.IsReoslve(CorkA) == 2 || BallManager.IsReoslve(CorkA) == 3) {
                         // ❗ 왼쪽으로 이동 불가능할 때 반발력 적용
                         CorkA->SetVelocityX(moveA * 0.3f);  // 30% 반발력
-                        CorkA->SetLocationX(CorkA->Location.x + 0.01f);  // 위치도 살짝 조정
+                        CorkA->SetLocationX(moveA * 0.05f);  // 위치도 살짝 조정
                     }
                 }
 
@@ -1642,10 +1642,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                             CorkB->SetVelocityX(moveB);
                         }
                     }
-                    else {
+                    else if (BallManager.IsReoslve(CorkB) == 1 || BallManager.IsReoslve(CorkB) == 4) {
                         // ❗ 오른쪽 이동 불가능할 때 반발력 적용
                         CorkB->SetVelocityX(-moveB * 0.3f);  // 30% 반발력
-                        CorkB->SetLocationX(CorkB->Location.x - 0.01f);  // 위치 보정
+                        CorkB->SetLocationX(-moveB * 0.05f);  // 위치 보정
                     }
                 }
             }
@@ -1666,10 +1666,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                         CorkA->SetVelocityY(moveA);
                     }
                 }
-                else {
+                else if (BallManager.IsReoslve(CorkA) == 1 || BallManager.IsReoslve(CorkA) == 2) {
                     // ❗ 위쪽 이동 불가능할 때 반발력 적용
                     CorkA->SetVelocityY(-moveA * 0.3f);  // 30% 반발력
-                    CorkA->SetLocationY(CorkA->Location.y - 0.01f);  // 위치 보정
+                    CorkA->SetLocationY(-moveA * 0.05f);  // 위치 보정
                 }
             }
             if (GetAsyncKeyState(0x53) & 0x8000 && CorkA->Location.y - moveA > -0.405f) { // S 키 (아래로 이동)
@@ -1687,10 +1687,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                         CorkA->SetVelocityY(-moveA);
                     }
                 }
-                else {
+                else if (BallManager.IsReoslve(CorkA) == 3 || BallManager.IsReoslve(CorkA) == 4) {
                     // ❗ 아래쪽 이동 불가능할 때 반발력 적용
                     CorkA->SetVelocityY(moveA * 0.3f);  // 30% 반발력
-                    CorkA->SetLocationY(CorkA->Location.y + 0.01f);  // 위치 보정
+                    CorkA->SetLocationY(moveA * 0.05f);  // 위치 보정
                 }
             }
 
@@ -1710,10 +1710,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                         CorkB->SetVelocityY(moveB);
                     }
                 }
-                else {
+                else if (BallManager.IsReoslve(CorkB) == 1 || BallManager.IsReoslve(CorkB) == 2) {
                     // ❗ 위쪽 이동 불가능할 때 반발력 적용
                     CorkB->SetVelocityY(-moveB * 0.3f);  // 30% 반발력
-                    CorkB->SetLocationY(CorkB->Location.y - 0.01f);  // 위치 보정
+                    CorkB->SetLocationY(-moveB * 0.05f);  // 위치 보정
                 }
             }
             if (GetAsyncKeyState(VK_DOWN) & 0x8000 && CorkB->Location.y - moveB > -0.405f) { // ↓ 키 (아래로 이동)
@@ -1731,10 +1731,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                         CorkB->SetVelocityY(-moveB);
                     }
                 }
-                else {
+                else if (BallManager.IsReoslve(CorkB) == 3 || BallManager.IsReoslve(CorkB) == 4) {
                     // ❗ 아래쪽 이동 불가능할 때 반발력 적용
                     CorkB->SetVelocityY(moveB * 0.3f);  // 30% 반발력
-                    CorkB->SetLocationY(CorkB->Location.y + 0.01f);  // 위치 보정
+                    CorkB->SetLocationY(moveB * 0.05f);  // 위치 보정
                 }
             }
 
