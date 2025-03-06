@@ -877,11 +877,37 @@ public:
         Renderer->RenderPrimitive(VertexBuffer, sizeof(sphere_vertices) / sizeof(FVertexSimple));
     }
 
+    //충돌 위치 감지
+    int IsResolve(UBall Other) {
+        FVector3 vector = Other.Location - Location;
+        float Distance = sqrtf(vector.x * vector.x + vector.y * vector.y);
+        float MinDist = Radius + Other.Radius;
+        if (Distance < MinDist) {
+            if (vector.x > 0) {
+                if (vector.y > 0) {
+                    return 1;
+                }
+                else {
+                    return 2;
+                }
+            }
+            else {
+                if (vector.y < 0) {
+                    return 3;
+                }
+                else {
+                    return 4;
+                }
+            }
+        }
+        return 0;
+    }
+
     // Cork와 Ball 사이의 충돌 처리
-    void ResolveCollision(UBall& Other) {
+    void ResolveCollision (UBall& Other) {
 
         FVector3 Diff = Location - Other.Location;
-        float Distance = sqrt(Diff.x * Diff.x + Diff.y * Diff.y);
+        float Distance = sqrtf(Diff.x * Diff.x + Diff.y * Diff.y);
         float MinDist = Radius + Other.Radius;
 
         if (Distance < MinDist) // 충돌 발생
@@ -1018,6 +1044,15 @@ public:
         }
     }
 
+    int IsReoslve(UCork* Cork) {
+        for (int i = 0; i < BallCount; i++) {
+            if (Cork->IsResolve(*BallList[i])) {
+                return Cork->IsResolve(*BallList[i]);
+            }
+        }
+        return 0;
+    }
+
     // 모든 공 이동
     void UpdateBalls(UCork* CorkA, UCork* CorkB)
     {
@@ -1041,8 +1076,8 @@ public:
                     AddBall(FVector3(0.0f));
                 break;
             }
-            CorkA->ResolveCollision(*BallList[i]);
-            CorkB->ResolveCollision(*BallList[i]);
+                CorkA->ResolveCollision(*BallList[i]);
+                CorkB->ResolveCollision(*BallList[i]);
 
             for (int j = 0; j < ItemManager->ItemCount; j++)
             {
@@ -1538,19 +1573,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             // 플레이어 A 조작 (A, D)
             if (!isMovingRightA && !isReturningA) {
                 if (GetAsyncKeyState(0x41) & 0x8000 && CorkA->Location.x - moveA > -0.905f) { // A 키 (왼쪽 이동)
-                    if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
-                        CorkA->SetLocationX(-moveA / 3);
-                        CorkA->SetVelocityX(-moveA / 3);
-                    }
-                    else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
-                        CorkA->SetLocationX(0);
-                        CorkA->SetVelocityX(0);
+                    if (!(BallManager.IsReoslve(CorkA) == 2 || BallManager.IsReoslve(CorkA) == 3)) {
+                        if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
+                            CorkA->SetLocationX(-moveA / 3);
+                            CorkA->SetVelocityX(-moveA / 3);
+                        }
+                        else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
+                            CorkA->SetLocationX(0);
+                            CorkA->SetVelocityX(0);
+                        }
+                        else {
+                            CorkA->SetLocationX(-moveA);
+                            CorkA->SetVelocityX(-moveA);
+                        }
                     }
                     else {
-                        CorkA->SetLocationX(-moveA);
-                        CorkA->SetVelocityX(-moveA);
+                        // ❗ 왼쪽으로 이동 불가능할 때 반발력 적용
+                        CorkA->SetVelocityX(moveA * 0.3f);  // 30% 반발력
+                        CorkA->SetLocationX(CorkA->Location.x + 0.01f);  // 위치도 살짝 조정
                     }
                 }
+
                 if (GetAsyncKeyState(0x44) & 0x8000 && CorkA->Location.x + moveA < -0.4f) { // D 키 (오른쪽 이동)
                     if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
                         CorkA->SetLocationX(moveA / 3);
@@ -1583,79 +1626,115 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                         CorkB->SetVelocityX(-moveB);
                     }
                 }
+
                 if (GetAsyncKeyState(VK_RIGHT) & 0x8000 && CorkB->Location.x + moveB < 0.905f) { // → 키 (오른쪽 이동)
-                    if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
-                        CorkB->SetLocationX(moveB / 3);
-                        CorkB->SetVelocityX(moveB / 3);
-                    }
-                    else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
-                        CorkB->SetLocationX(0);
-                        CorkB->SetVelocityX(0);
+                    if (!(BallManager.IsReoslve(CorkB) == 1 || BallManager.IsReoslve(CorkB) == 4)) {
+                        if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
+                            CorkB->SetLocationX(moveB / 3);
+                            CorkB->SetVelocityX(moveB / 3);
+                        }
+                        else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
+                            CorkB->SetLocationX(0);
+                            CorkB->SetVelocityX(0);
+                        }
+                        else {
+                            CorkB->SetLocationX(moveB);
+                            CorkB->SetVelocityX(moveB);
+                        }
                     }
                     else {
-                        CorkB->SetLocationX(moveB);
-                        CorkB->SetVelocityX(moveB);
+                        // ❗ 오른쪽 이동 불가능할 때 반발력 적용
+                        CorkB->SetVelocityX(-moveB * 0.3f);  // 30% 반발력
+                        CorkB->SetLocationX(CorkB->Location.x - 0.01f);  // 위치 보정
                     }
                 }
             }
 
             // 플레이어 A 조작 (W, S)
             if (GetAsyncKeyState(0x57) & 0x8000 && CorkA->Location.y + moveA < 0.405f) { // W 키 (위로 이동)
-                if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
-                    CorkA->SetLocationY(moveA / 3);
-                    CorkA->SetVelocityY(moveA / 3);
-                }
-                else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
-                    CorkA->SetLocationY(0);
-                    CorkA->SetVelocityY(0);
+                if (!(BallManager.IsReoslve(CorkA) == 1 || BallManager.IsReoslve(CorkA) == 2)) {
+                    if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
+                        CorkA->SetLocationY(moveA / 3);
+                        CorkA->SetVelocityY(moveA / 3);
+                    }
+                    else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
+                        CorkA->SetLocationY(0);
+                        CorkA->SetVelocityY(0);
+                    }
+                    else {
+                        CorkA->SetLocationY(moveA);
+                        CorkA->SetVelocityY(moveA);
+                    }
                 }
                 else {
-                    CorkA->SetLocationY(moveA);
-                    CorkA->SetVelocityY(moveA);
+                    // ❗ 위쪽 이동 불가능할 때 반발력 적용
+                    CorkA->SetVelocityY(-moveA * 0.3f);  // 30% 반발력
+                    CorkA->SetLocationY(CorkA->Location.y - 0.01f);  // 위치 보정
                 }
             }
             if (GetAsyncKeyState(0x53) & 0x8000 && CorkA->Location.y - moveA > -0.405f) { // S 키 (아래로 이동)
-                if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
-                    CorkA->SetLocationY(-moveA / 3);
-                    CorkA->SetVelocityY(-moveA / 3);
-                }
-                else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
-                    CorkA->SetLocationY(0);
-                    CorkA->SetVelocityY(0);
+                if (!(BallManager.IsReoslve(CorkA) == 3 || BallManager.IsReoslve(CorkA) == 4)) {
+                    if (CorkA->PlayerBuff == EPlayerBuff::Slow) {
+                        CorkA->SetLocationY(-moveA / 3);
+                        CorkA->SetVelocityY(-moveA / 3);
+                    }
+                    else if (CorkA->PlayerBuff == EPlayerBuff::Stop) {
+                        CorkA->SetLocationY(0);
+                        CorkA->SetVelocityY(0);
+                    }
+                    else {
+                        CorkA->SetLocationY(-moveA);
+                        CorkA->SetVelocityY(-moveA);
+                    }
                 }
                 else {
-                    CorkA->SetLocationY(-moveA);
-                    CorkA->SetVelocityY(-moveA);
+                    // ❗ 아래쪽 이동 불가능할 때 반발력 적용
+                    CorkA->SetVelocityY(moveA * 0.3f);  // 30% 반발력
+                    CorkA->SetLocationY(CorkA->Location.y + 0.01f);  // 위치 보정
                 }
             }
 
             // 플레이어 B 조작 (↑, ↓)
             if (GetAsyncKeyState(VK_UP) & 0x8000 && CorkB->Location.y + moveB < 0.405f) { // ↑ 키 (위로 이동)
-                if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
-                    CorkB->SetLocationY(moveB / 3);
-                    CorkB->SetVelocityY(moveB / 3);
-                }
-                else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
-                    CorkB->SetLocationY(0);
-                    CorkB->SetVelocityY(0);
+                if (!(BallManager.IsReoslve(CorkB) == 1 || BallManager.IsReoslve(CorkB) == 2)) {
+                    if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
+                        CorkB->SetLocationY(moveB / 3);
+                        CorkB->SetVelocityY(moveB / 3);
+                    }
+                    else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
+                        CorkB->SetLocationY(0);
+                        CorkB->SetVelocityY(0);
+                    }
+                    else {
+                        CorkB->SetLocationY(moveB);
+                        CorkB->SetVelocityY(moveB);
+                    }
                 }
                 else {
-                    CorkB->SetLocationY(moveB);
-                    CorkB->SetVelocityY(moveB);
+                    // ❗ 위쪽 이동 불가능할 때 반발력 적용
+                    CorkB->SetVelocityY(-moveB * 0.3f);  // 30% 반발력
+                    CorkB->SetLocationY(CorkB->Location.y - 0.01f);  // 위치 보정
                 }
             }
             if (GetAsyncKeyState(VK_DOWN) & 0x8000 && CorkB->Location.y - moveB > -0.405f) { // ↓ 키 (아래로 이동)
-                if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
-                    CorkB->SetLocationY(-moveB / 3);
-                    CorkB->SetVelocityY(-moveB / 3);
-                }
-                else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
-                    CorkB->SetLocationY(0);
-                    CorkB->SetVelocityY(0);
+                if (!(BallManager.IsReoslve(CorkB) == 3 || BallManager.IsReoslve(CorkB) == 4)) {
+                    if (CorkB->PlayerBuff == EPlayerBuff::Slow) {
+                        CorkB->SetLocationY(-moveB / 3);
+                        CorkB->SetVelocityY(-moveB / 3);
+                    }
+                    else if (CorkB->PlayerBuff == EPlayerBuff::Stop) {
+                        CorkB->SetLocationY(0);
+                        CorkB->SetVelocityY(0);
+                    }
+                    else {
+                        CorkB->SetLocationY(-moveB);
+                        CorkB->SetVelocityY(-moveB);
+                    }
                 }
                 else {
-                    CorkB->SetLocationY(-moveB);
-                    CorkB->SetVelocityY(-moveB);
+                    // ❗ 아래쪽 이동 불가능할 때 반발력 적용
+                    CorkB->SetVelocityY(moveB * 0.3f);  // 30% 반발력
+                    CorkB->SetLocationY(CorkB->Location.y + 0.01f);  // 위치 보정
                 }
             }
 
