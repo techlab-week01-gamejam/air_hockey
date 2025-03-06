@@ -24,13 +24,17 @@
 #include "vector3.h"
 #include "UI/UIManager.h"
 #include "GameManager.h"
+
 bool bUseGravity = false; // 중력 적용 여부 (기본 OFF)
 float Gravity = -0.001f; // 중력 가속도 값 (음수 값: 아래 방향)
 float leftHole = 0.2f;
 float rightHole = 0.2f;
+float leftHoleScale = 1.0f; // 골대 스케일 (반쪽)
+float rightHoleScale = 1.0f; // 골대 스케일 (반쪽)
 int scoreA = 0;
 int scoreB = 0;
 char isGoal;
+
 
 // 1. Define the triangle vertices
 struct FVertexSimple
@@ -107,7 +111,7 @@ public:
     ID3D11RenderTargetView* FrameBufferRTV = nullptr; // 텍스처를 렌더 타겟으로 사용하는 뷰
     ID3D11RasterizerState* RasterizerState = nullptr; // 래스터라이저 상태(컬링, 채우기 모드 등 정의)
     ID3D11Buffer* ConstantBuffer = nullptr; // 쉐이더에 데이터를 전달하기 위한 상수 버퍼
-    ID3D11BlendState* AlphaBlendState = nullptr;
+    ID3D11BlendState* AlphaBlendState = nullptr; // 알파 블렌딩 상태
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f }; // 화면을 초기화(clear)할 때 사용할 색상 (RGBA)
     D3D11_VIEWPORT ViewportInfo; // 렌더링 영역을 정의하는 뷰포트 정보
@@ -143,7 +147,7 @@ public:
         // 래스터라이저 상태 생성
         CreateRasterizerState();
 
-        // 깊이 스텐실 버퍼 및 블렌드 상태는 이 코드에서는 다루지 않음
+        // 블렌드 상태 생성
         CreateBlendState();
         // 샘플러 생성
         CreateSamplerState();
@@ -465,22 +469,22 @@ public:
         D3D11_BLEND_DESC blendDesc = {};
         ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
 
-        // ��� ���� Ÿ�꿡 ������ ������ �ɼ��� ����
+        // 모든 렌더 타깃에 동일한 블렌딩 옵션을 적용
         blendDesc.AlphaToCoverageEnable = FALSE;
         blendDesc.IndependentBlendEnable = FALSE;
         blendDesc.RenderTarget[0].BlendEnable = TRUE;
 
-        // �ҽ� ���Ŀ� ���ҽ� ���ĸ� �̿��� �������� ���
+        // src 알파와 dest 알파를 이용해 투명도를 계산
         blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
         blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
         blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
 
-        // ���� ä�ο� ���ؼ��� ������ ���� ����
+        // 알파 채널에 대해서는 별도의 연산 설정
         blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
         blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
         blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 
-        // RGBA ��� ����
+        // RGBA 모두 사용
         blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
         HRESULT hr = Device->CreateBlendState(&blendDesc, &AlphaBlendState);
@@ -535,12 +539,12 @@ public:
         const float topBorder = 0.475f - Radius;
         const float bottomBorder = -0.475f + Radius;
 
-        if (Location.x < leftBorder && (Location.y > leftHole - 0.025f || Location.y < -leftHole + 0.025f))
+        if (Location.x < leftBorder && (Location.y > leftHole * leftHoleScale - 0.025f || Location.y < -leftHole * rightHoleScale + 0.025f))
         {
             Location.x = leftBorder;  // 위치 보정
             Velocity.x *= -0.7f;      // 반사
         }
-        else if (Location.x > rightBorder && (Location.y > rightHole - 0.025f || Location.y < -rightHole + 0.025f))
+        else if (Location.x > rightBorder && (Location.y > rightHole * leftHoleScale - 0.025f || Location.y < -rightHole * rightHoleScale + 0.025f))
         {
             Location.x = rightBorder;
             Velocity.x *= -0.7f;
@@ -602,7 +606,6 @@ public:
             Location += Correction;
             Other.Location -= Correction;
 
-            // �ִϸ��̼� ���� (�浹 ��������)
             FVector3 CollisionPoint = (Location + Other.Location) * 0.5f;
             SpriteAnimationManager::GetInstance()->PlayAnimation("Hit1", CollisionPoint, 0.2f);
         }
@@ -624,6 +627,7 @@ enum class EItem
     TwoBalls,
     Slow,
     Stop,
+    WideGoal,
     TotalItemCount
 };
 
@@ -650,6 +654,9 @@ public:
         }
         else if (ItemType == EItem::Slow || ItemType == EItem::Stop) {
             renderer->DeviceContext->PSSetShaderResources(0, 1, &renderer->DeBuffItemTexture);
+        }
+        else if (ItemType == EItem::WideGoal) {
+            renderer->DeviceContext->PSSetShaderResources(0, 1, &renderer->BuffItemTexture);
         }
 
         renderer->UpdateConstant(Location, 0.04f);
@@ -739,7 +746,7 @@ public:
             {
                 newItem = GetRandomItem();
             }
-            ItemList[ItemCount] = new UItem(FVector3(RandomFloat(-0.9f, 0.9f), RandomFloat(-0.4f, 0.4f), 0.0f), newItem);
+            ItemList[ItemCount] = new UItem(FVector3(RandomFloat(-0.7f, 0.7f), RandomFloat(-0.4f, 0.4f), 0.0f), newItem);
             ItemCount++;
         }
     }
@@ -805,6 +812,7 @@ enum class EPlayerBuff {
     None,
     Slow,
     Stop,
+    WideGoal
 };
 
 class UCork {
@@ -884,6 +892,13 @@ public:
             FVector3 Correction = Normal * (Overlap / 2.0f);
 
             Other.Location -= Correction;
+
+            // 충돌시 사운드 재생
+            SoundManager::GetInstance()->PlaySFX("Hit");
+
+            // 충돌시 애니메이션 재생
+			FVector3 collisionPoint = (Location + Other.Location) * 0.5f;
+			SpriteAnimationManager::GetInstance()->PlayAnimation("Hit1", collisionPoint, 0.2f);
 
             // 공에게 마지막으로 공격한 플레이어가 누구인지 전달
             Other.SetPlayerFlag(PlayerFlag);
@@ -1038,6 +1053,11 @@ public:
                                 HANDLE hThread = CreateThread(NULL, 0, BuffTimerThread, CorkA, 0, NULL);
                                 if (hThread) CloseHandle(hThread);
                             }
+                            else if (ItemManager->ItemList[j]->ItemType == EItem::WideGoal) {
+                                CorkA->SetPlayerBuff(EPlayerBuff::WideGoal);
+                                HANDLE hThread = CreateThread(NULL, 0, BuffTimerThread, CorkA, 0, NULL);
+                                if (hThread) CloseHandle(hThread);
+                            }
                         }
                         else {
                             if (ItemManager->ItemList[j]->ItemType == EItem::Slow) {
@@ -1047,6 +1067,11 @@ public:
                             }
                             else if (ItemManager->ItemList[j]->ItemType == EItem::Stop) {
                                 CorkB->SetPlayerBuff(EPlayerBuff::Stop);
+                                HANDLE hThread = CreateThread(NULL, 0, BuffTimerThread, CorkB, 0, NULL);
+                                if (hThread) CloseHandle(hThread);
+                            }
+                            else if (ItemManager->ItemList[j]->ItemType == EItem::WideGoal) {
+                                CorkB->SetPlayerBuff(EPlayerBuff::WideGoal);
                                 HANDLE hThread = CreateThread(NULL, 0, BuffTimerThread, CorkB, 0, NULL);
                                 if (hThread) CloseHandle(hThread);
                             }
@@ -1142,9 +1167,37 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return 0;
 }
 
-DWORD WINAPI TimerThread(LPVOID lpParam)
+struct WideGoalTimerThreadParams {
+    UCork* CorkA;
+    UCork* CorkB;
+};
+
+DWORD WINAPI WideGoalItemTimerThread(LPVOID lpParam)
+{
+    WideGoalTimerThreadParams* Params = static_cast<WideGoalTimerThreadParams*>(lpParam);
+    UCork* CorkA = Params->CorkA;
+    UCork* CorkB = Params->CorkB;
+
+    while (true)
+    {
+        if (CorkA->PlayerBuff == EPlayerBuff::WideGoal) {
+            rightHoleScale = 1.5;
+        }
+        else if (CorkB->PlayerBuff == EPlayerBuff::WideGoal) {
+            leftHoleScale = 1.5;
+        }
+        else {
+            leftHoleScale = 1;
+            rightHoleScale = 1;
+        }
+
+    }
+}
+
+DWORD WINAPI ItemTimerThread(LPVOID lpParam)
 {
     UItemManager* ItemManager = static_cast<UItemManager*>(lpParam);
+
     while (true)
     {
         if (ItemManager->ItemCount == 2)
@@ -1158,6 +1211,7 @@ DWORD WINAPI TimerThread(LPVOID lpParam)
         }
     }
 }
+
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
@@ -1196,11 +1250,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
     UItemManager ItemManager(&renderer);
-    HANDLE hThread = CreateThread(NULL, 0, TimerThread, &ItemManager, 0, NULL);
-
+    HANDLE hThread = CreateThread(NULL, 0, ItemTimerThread, &ItemManager, 0, NULL);
 
     UBallManager BallManager(&renderer, &ItemManager);
-
 
 
     // 가로선 세로선 생성
@@ -1230,6 +1282,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // 골대 A, B
     FVertexSimple holeA[36];
     FVertexSimple holeB[36];
+    FVertexSimple wideholeA[36];
+    FVertexSimple wideholeB[36];
 
     for (UINT i = 0; i < numVerticeCube; i++)
     {
@@ -1243,9 +1297,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         holeB[i].x *= 0.1f;
         holeB[i].y *= rightHole * 2;
         holeB[i].r = 0.025f; holeB[i].g = 0.025f; holeB[i].b = 0.025f; holeB[i].a = 1.0f;
+
+        //골대 스케일링
+        wideholeA[i] = cube_vertices[i];
+        wideholeA[i].x *= 0.1f;
+        wideholeA[i].y *= leftHole * 3;
+        wideholeA[i].r = 0.025f;  wideholeA[i].g = 0.025f;  wideholeA[i].b = 0.025f;  wideholeA[i].a = 1.0f;
+
+        wideholeB[i] = cube_vertices[i];
+        wideholeB[i].x *= 0.1f;
+        wideholeB[i].y *= rightHole * 3;
+        wideholeB[i].r = 0.025f; wideholeB[i].g = 0.025f; wideholeB[i].b = 0.025f; wideholeB[i].a = 1.0f;
     }
+
     ID3D11Buffer* vertexBufferHoleA = renderer.CreateVertexBuffer(holeA, sizeof(holeA));
     ID3D11Buffer* vertexBufferHoleB = renderer.CreateVertexBuffer(holeB, sizeof(holeB));
+    ID3D11Buffer* vertexBufferWideHoleA = renderer.CreateVertexBuffer(wideholeA, sizeof(wideholeA));
+    ID3D11Buffer* vertexBufferWideHoleB = renderer.CreateVertexBuffer(wideholeB, sizeof(wideholeB));
 
     FVector3 offsetHoleA(-1.0f, 0.0f, 0.0f);
     FVector3 offsetHoleB(1.0f, 0.0f, 0.0f);
@@ -1270,7 +1338,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     double elapsedTime = 0.0;
     double deltaTime = 0.0f;
 
-    /* SoundManager Init */
+    /* SoundManager  초기화 */
     SoundManager* SoundMgr = SoundManager::GetInstance();
 
     if (!SoundMgr->Initialize()) {
@@ -1279,13 +1347,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     SoundMgr->LoadSound("Hit", "hit.mp3");
 
-    /* TextureManager �ʱ�ȭ*/
+    /* TextureManager 초기화*/
     TextureManager::GetInstance()->Initiallize(renderer.Device, renderer.DeviceContext);
 
-	/* SpriteAnimationManager �ʱ�ȭ */ 
+	/* SpriteAnimationManager 초기화*/ 
     SpriteAnimationManager::GetInstance()->Initialize(renderer.Device);
 
-    // �ִϸ��̼� ���
+    // 충돌 애니메이션 등록
 	SpriteAnimationManager::GetInstance()->RegisterAnimation("Hit1", "hit_1.png", 1, 5, 0.05f, renderer.Device);
     SpriteAnimationManager::GetInstance()->RegisterAnimation("Hit2", "hit_2.png", 1, 4, 0.05f, renderer.Device);
 
@@ -1296,6 +1364,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // 플레이어 Cork
     UCork* CorkA = new UCork(FVector3(-0.875f, 0.0f, 0.0f), 0.07f, 30.0f, 1, &renderer);
     UCork* CorkB = new UCork(FVector3(0.875f, 0.0f, 0.0f), 0.07f, 30.0f, 2, &renderer);
+
+    WideGoalTimerThreadParams* Params = new WideGoalTimerThreadParams{ CorkA, CorkB };
+    HANDLE hThread2 = CreateThread(NULL, 0, WideGoalItemTimerThread, Params, 0, NULL);
 
     // A의 초기 위치 및 목표 위치 설정
     float initialXA; // A의 원래 위치
@@ -1585,6 +1656,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             BallManager.UpdateBalls(CorkA, CorkB);
 
+            //SoundManager Update
+			SoundManager::GetInstance()->Update();
+            
+			//SpriteAnimationManager Update
+            SpriteAnimationManager::GetInstance()->Update(deltaTime);
+
             CorkA->SetVelocityY(0.0f);
             CorkB->SetVelocityY(0.0f);
 
@@ -1622,10 +1699,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             //홀 렌더링
             renderer.DeviceContext->PSSetShaderResources(0, 1, &renderer.HoleTexture);
-            renderer.UpdateConstant(offsetHoleA, 1.0f);
-            renderer.RenderPrimitive(vertexBufferHoleA, numVerticeCube);
-            renderer.UpdateConstant(offsetHoleB, 1.0f);
-            renderer.RenderPrimitive(vertexBufferHoleB, numVerticeCube);
+            if (CorkA->PlayerBuff == EPlayerBuff::WideGoal) {
+                renderer.UpdateConstant(offsetHoleA, 1.0f);
+                renderer.RenderPrimitive(vertexBufferHoleA, numVerticeCube);
+                renderer.UpdateConstant(offsetHoleB, 1.0f);
+                renderer.RenderPrimitive(vertexBufferWideHoleB, numVerticeCube);
+            }
+            else if (CorkB->PlayerBuff == EPlayerBuff::WideGoal) {
+                renderer.UpdateConstant(offsetHoleA, 1.0f);
+                renderer.RenderPrimitive(vertexBufferWideHoleA, numVerticeCube);
+                renderer.UpdateConstant(offsetHoleB, 1.0f);
+                renderer.RenderPrimitive(vertexBufferHoleB, numVerticeCube);
+            }
+            else {
+                renderer.UpdateConstant(offsetHoleA, 1.0f);
+                renderer.RenderPrimitive(vertexBufferHoleA, numVerticeCube);
+                renderer.UpdateConstant(offsetHoleB, 1.0f);
+                renderer.RenderPrimitive(vertexBufferHoleB, numVerticeCube);
+            }
+
 
             //아이템 렌더링
             ItemManager.RenderItems();
@@ -1638,6 +1730,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             BallManager.RenderBalls();
 
+			//SpriteAnimationManager 렌더링
+			SpriteAnimationManager::GetInstance()->Render(renderer.DeviceContext);
 
         }
 #pragma endregion
@@ -1656,6 +1750,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             // 한 프레임이 소요된 시간 계산 (밀리초 단위로 변환)
             elapsedTime = (endTime.QuadPart - startTime.QuadPart) * 1000.0 / frequency.QuadPart;
+			deltaTime = elapsedTime / 1000.0f; // 초 단위로 변환
 
         } while (elapsedTime < targetFrameTime);
     }
