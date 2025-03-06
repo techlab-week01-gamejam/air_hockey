@@ -149,7 +149,7 @@ void SpriteAnimationManager::Render(ID3D11DeviceContext* context) {
 	}
 }
 
-void SpriteAnimationManager::RenderAnimation(ID3D11DeviceContext* context, const std::string& name, FVector3 position, float scale, int frameIndex) {
+void SpriteAnimationManager::RenderAnimation(ID3D11DeviceContext* context, const std::string& name, FVector3 position, float scale,int frameIndex) {
 	if (Animations.end() == Animations.find(name))
 		return;
 

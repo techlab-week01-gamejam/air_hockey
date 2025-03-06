@@ -21,6 +21,7 @@
 #include "SoundManager.h"
 #include "TextureManager.h"
 #include "SpriteAnimationManager.h" 
+#include "ParticleManager.h"
 #include "vector3.h"
 #include "UI/UIManager.h"
 #include "GameManager.h"
@@ -605,9 +606,12 @@ public:
 
             Location += Correction;
             Other.Location -= Correction;
-
-            FVector3 CollisionPoint = (Location + Other.Location) * 0.5f;
-            SpriteAnimationManager::GetInstance()->PlayAnimation("Hit1", CollisionPoint, 0.2f);
+            // 충돌시 사운드 재생
+            SoundManager::GetInstance()->PlaySFX("Hit");
+          
+            // 충돌시 이펙트 재생 
+            FVector3 collisionPoint = (Location + Other.Location) * 0.5f;
+            SpriteAnimationManager::GetInstance()->PlayAnimation("Hit1",collisionPoint, 0.2f);
         }
     }
 
@@ -672,6 +676,11 @@ public:
 
         if (Distance < MinDist) // 아이템과 공이 충돌하면
         {
+            SoundManager::GetInstance()->PlaySFX("ItemPickup");
+
+            // 충돌시 이펙트 재생 
+            FVector3 collisionPoint = (Location + Other.Location) * 0.5f;
+            ParticleManager::GetInstance()->SpawnParticleEffect("ParticleEffect_Blue",collisionPoint, 8, 0.08f, 1.0f);
             return true;
         }
 
@@ -899,6 +908,7 @@ public:
             // 충돌시 애니메이션 재생
 			FVector3 collisionPoint = (Location + Other.Location) * 0.5f;
 			SpriteAnimationManager::GetInstance()->PlayAnimation("Hit1", collisionPoint, 0.2f);
+           // ParticleManager::GetInstance()->SpawnParticleEffect(collisionPoint, 10, 0.1f, 1.0f);
 
             // 공에게 마지막으로 공격한 플레이어가 누구인지 전달
             Other.SetPlayerFlag(PlayerFlag);
@@ -1025,6 +1035,7 @@ public:
                     scoreA = 0; scoreB = 0;
                     break;
                 }
+
                 RemoveBall(i);
                 if (BallCount == 0)
                     AddBall(FVector3(0.0f));
@@ -1346,12 +1357,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
 
     SoundMgr->LoadSound("Hit", "hit.mp3");
+    SoundMgr->LoadSound("Score", "score_1.mp3");
+    SoundMgr->LoadSound("Click", "click.mp3");
+    SoundMgr->LoadSound("GameStart", "game_start.mp3");
+    SoundMgr->LoadSound("ItemPickup", "item_pickup.mp3");
 
     /* TextureManager 초기화*/
     TextureManager::GetInstance()->Initiallize(renderer.Device, renderer.DeviceContext);
 
 	/* SpriteAnimationManager 초기화*/ 
     SpriteAnimationManager::GetInstance()->Initialize(renderer.Device);
+
+    /* ParticleManager 초기화 */
+    ParticleManager::GetInstance()->Initialize(renderer.Device);
 
     // 충돌 애니메이션 등록
 	SpriteAnimationManager::GetInstance()->RegisterAnimation("Hit1", "hit_1.png", 1, 5, 0.05f, renderer.Device);
@@ -1662,6 +1680,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			//SpriteAnimationManager Update
             SpriteAnimationManager::GetInstance()->Update(deltaTime);
 
+            ParticleManager::GetInstance()->Update(deltaTime);
+            
+
             CorkA->SetVelocityY(0.0f);
             CorkB->SetVelocityY(0.0f);
 
@@ -1730,9 +1751,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
             BallManager.RenderBalls();
 
-			//SpriteAnimationManager 렌더링
-			SpriteAnimationManager::GetInstance()->Render(renderer.DeviceContext);
-
+            //SpriteAnimationManager 렌더링
+            SpriteAnimationManager::GetInstance()->Render(renderer.DeviceContext);
+            ParticleManager::GetInstance()->Render(renderer.DeviceContext);
         }
 #pragma endregion
 
