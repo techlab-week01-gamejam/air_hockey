@@ -24,6 +24,7 @@
 #include "vector3.h"
 #include "UI/UIManager.h"
 #include "GameManager.h"
+
 bool bUseGravity = false; // 중력 적용 여부 (기본 OFF)
 float Gravity = -0.001f; // 중력 가속도 값 (음수 값: 아래 방향)
 float leftHole = 0.2f;
@@ -107,7 +108,7 @@ public:
     ID3D11RenderTargetView* FrameBufferRTV = nullptr; // 텍스처를 렌더 타겟으로 사용하는 뷰
     ID3D11RasterizerState* RasterizerState = nullptr; // 래스터라이저 상태(컬링, 채우기 모드 등 정의)
     ID3D11Buffer* ConstantBuffer = nullptr; // 쉐이더에 데이터를 전달하기 위한 상수 버퍼
-    ID3D11BlendState* AlphaBlendState = nullptr;
+    ID3D11BlendState* AlphaBlendState = nullptr; // 알파 블렌딩 상태
 
     FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f }; // 화면을 초기화(clear)할 때 사용할 색상 (RGBA)
     D3D11_VIEWPORT ViewportInfo; // 렌더링 영역을 정의하는 뷰포트 정보
@@ -143,7 +144,7 @@ public:
         // 래스터라이저 상태 생성
         CreateRasterizerState();
 
-        // 깊이 스텐실 버퍼 및 블렌드 상태는 이 코드에서는 다루지 않음
+        // 블렌드 상태 생성
         CreateBlendState();
         // 샘플러 생성
         CreateSamplerState();
@@ -465,22 +466,22 @@ public:
         D3D11_BLEND_DESC blendDesc = {};
         ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
 
-        // ��� ���� Ÿ�꿡 ������ ������ �ɼ��� ����
+        // 모든 렌더 타깃에 동일한 블렌딩 옵션을 적용
         blendDesc.AlphaToCoverageEnable = FALSE;
         blendDesc.IndependentBlendEnable = FALSE;
         blendDesc.RenderTarget[0].BlendEnable = TRUE;
 
-        // �ҽ� ���Ŀ� ���ҽ� ���ĸ� �̿��� �������� ���
+        // src 알파와 dest 알파를 이용해 투명도를 계산
         blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
         blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
         blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
 
-        // ���� ä�ο� ���ؼ��� ������ ���� ����
+        // 알파 채널에 대해서는 별도의 연산 설정
         blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
         blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
         blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
 
-        // RGBA ��� ����
+        // RGBA 모두 사용
         blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 
         HRESULT hr = Device->CreateBlendState(&blendDesc, &AlphaBlendState);
