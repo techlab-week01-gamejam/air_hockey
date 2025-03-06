@@ -1271,7 +1271,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     double elapsedTime = 0.0;
     double deltaTime = 0.0f;
 
-    /* SoundManager Init */
+    /* SoundManager  초기화 */
     SoundManager* SoundMgr = SoundManager::GetInstance();
 
     if (!SoundMgr->Initialize()) {
@@ -1280,13 +1280,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     SoundMgr->LoadSound("Hit", "hit.mp3");
 
-    /* TextureManager �ʱ�ȭ*/
+    /* TextureManager 초기화*/
     TextureManager::GetInstance()->Initiallize(renderer.Device, renderer.DeviceContext);
 
-	/* SpriteAnimationManager �ʱ�ȭ */ 
+	/* SpriteAnimationManager 초기화*/ 
     SpriteAnimationManager::GetInstance()->Initialize(renderer.Device);
 
-    // �ִϸ��̼� ���
+    // 충돌 애니메이션 등록
 	SpriteAnimationManager::GetInstance()->RegisterAnimation("Hit1", "hit_1.png", 1, 5, 0.05f, renderer.Device);
     SpriteAnimationManager::GetInstance()->RegisterAnimation("Hit2", "hit_2.png", 1, 4, 0.05f, renderer.Device);
 
