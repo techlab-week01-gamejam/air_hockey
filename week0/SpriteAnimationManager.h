@@ -11,7 +11,7 @@ struct Vertex {
 };
 
 struct ActiveAnimation {
-	std::string Name;
+	std::wstring Name;
 	FVector3 Position;
 	float Scale;
 	float  TimeLeft; //  애니메이션이 사라질 때까지 남은 시간
@@ -34,18 +34,18 @@ class SpriteAnimationManager {
 public:
 	static SpriteAnimationManager* GetInstance();
 	void Initialize(ID3D11Device* device);
-	void RegisterAnimation(const std::string& name, const std::string& filename, int rows, int cols, float frameTime, ID3D11Device* device);
+	void RegisterAnimation(const std::wstring& name, const std::wstring& filename, int rows, int cols, float frameTime, ID3D11Device* device);
 	void Update(float deltaTime);
 	void Render(ID3D11DeviceContext* context);
-	void GetUV(const std::string& name, float& u, float& v, float& w, float& h);
-	void PlayAnimation(const std::string& name, FVector3 position, float scale);
+	void GetUV(const std::wstring& name, float& u, float& v, float& w, float& h);
+	void PlayAnimation(const std::wstring& name, FVector3 position, float scale);
 
 private:
 	SpriteAnimationManager();
 	~SpriteAnimationManager();
 	static SpriteAnimationManager* Instance;
 
-	std::unordered_map<std::string, AnimationData> Animations;
+	std::unordered_map<std::wstring, AnimationData> Animations;
 	std::vector<ActiveAnimation> ActiveAnimations;
 
 	ID3D11VertexShader* VertexShader = nullptr;  // 정점 셰이더
@@ -54,7 +54,7 @@ private:
 
 	ID3D11Buffer* VertexBuffer = nullptr;
 
-	void RenderAnimation(ID3D11DeviceContext* context, const std::string& name, FVector3 position, float scale, int frameIndex);
+	void RenderAnimation(ID3D11DeviceContext* context, const std::wstring& name, FVector3 position, float scale, int frameIndex);
 	void LoadShaders(ID3D11Device* device);
 	void CreateVertexBuffer(ID3D11Device* device);
 };

@@ -29,22 +29,22 @@ TextureManager::~TextureManager() {
 	}
 }
 
-ID3D11ShaderResourceView* TextureManager::LoadTexture(const std::string& filename) {
-	std::string fullPath = GetTexturePath() + "\\" + filename;
+ID3D11ShaderResourceView* TextureManager::LoadTexture(const std::wstring& filename) {
+	std::wstring wfullPath = GetTexturePath() + L"\\" + filename;
 
-	if (TextureCache.end() != TextureCache.find(fullPath)) {
-		return TextureCache[fullPath];
+	if (TextureCache.end() != TextureCache.find(wfullPath)) {
+		return TextureCache[wfullPath];
 	}
 
 	ID3D11ShaderResourceView* textureView = nullptr;
-	if (SUCCEEDED(LoadTextureFromFile(fullPath, &textureView))) {
-		TextureCache[fullPath] = textureView;
+	if (SUCCEEDED(LoadTextureFromFile(wfullPath, &textureView))) {
+		TextureCache[wfullPath] = textureView;
 	}
 
 	return textureView;
 }
 
-ID3D11ShaderResourceView* TextureManager::GetTexture(const std::string& filename) {
+ID3D11ShaderResourceView* TextureManager::GetTexture(const std::wstring& filename) {
 	if (TextureCache.end() != TextureCache.find(filename)) {
 		return TextureCache[filename];
 	}
@@ -53,7 +53,7 @@ ID3D11ShaderResourceView* TextureManager::GetTexture(const std::string& filename
 }
 
 void TextureManager::Release() {
-	std::unordered_map<std::string, ID3D11ShaderResourceView*>::iterator iter;
+	std::unordered_map<std::wstring, ID3D11ShaderResourceView*>::iterator iter;
 	for (iter = TextureCache.begin(); TextureCache.end() != iter; ++iter) {
 		if (nullptr != iter->second) {
 			iter->second->Release();
@@ -63,9 +63,7 @@ void TextureManager::Release() {
 }
 
 /* WIC를 사용해서 이미지 로드 */
-HRESULT TextureManager::LoadTextureFromFile(const std::string& filename, ID3D11ShaderResourceView** textureView) {
-    std::wstring wFilename = StringToWString(filename); // string → wstring 변환
-
+HRESULT TextureManager::LoadTextureFromFile(const std::wstring& filename, ID3D11ShaderResourceView** textureView) {
     ComPtr<IWICImagingFactory> wicFactory;
     ComPtr<IWICBitmapDecoder> decoder;
     ComPtr<IWICBitmapFrameDecode> frame;
@@ -75,7 +73,10 @@ HRESULT TextureManager::LoadTextureFromFile(const std::string& filename, ID3D11S
     CoInitialize(nullptr);
     CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&wicFactory));
 
-    wicFactory->CreateDecoderFromFilename(wFilename.c_str(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnDemand, &decoder);
+    wicFactory->CreateDecoderFromFilename(filename.c_str(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnDemand, &decoder);
+	if (nullptr == decoder) {
+		MessageBox(nullptr, L"이미지 로드 실패", L"에러", MB_OK);
+	}
     decoder->GetFrame(0, &frame);
 
     wicFactory->CreateFormatConverter(&converter);
@@ -110,11 +111,11 @@ std::wstring TextureManager::StringToWString(const std::string& str) {
     return wstr;
 }
 
-std::string TextureManager::GetTexturePath() {
-	char path[MAX_PATH];
-	GetModuleFileNameA(nullptr, path, MAX_PATH);
-	std::string exePath(path);
-	std::string currentDir = exePath.substr(0, exePath.find_last_of("\\/"));
-	std::string resourcePath = currentDir + "\\..\\..\\resource\\texture";
+std::wstring TextureManager::GetTexturePath() {
+	wchar_t wpath[MAX_PATH];
+	GetModuleFileNameW(nullptr, wpath, MAX_PATH);
+	std::wstring exePath(wpath);
+	std::wstring currentDir = exePath.substr(0, exePath.find_last_of(L"\\/"));
+	std::wstring resourcePath = currentDir + L"\\..\\..\\resource\\texture";
 	return resourcePath;
 }

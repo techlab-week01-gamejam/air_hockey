@@ -21,15 +21,15 @@ void ParticleManager::Initialize(ID3D11Device* device) {
     //ParticleTexture = TextureManager::GetInstance()->LoadTexture("jewel_particle_yellow@2x.png");
 
     SpriteAnimationManager::GetInstance()->RegisterAnimation(
-        "ParticleEffect_Blue", "jewel_particle_blue@2x.png", 1, 1, 0.1f, device
+        L"ParticleEffect_Blue", L"jewel_particle_blue@2x.png", 1, 1, 0.1f, device
     );
 
     SpriteAnimationManager::GetInstance()->RegisterAnimation(
-        "ParticleEffect_Yellow", "jewel_particle_yellow@2x.png", 1, 1, 0.1f, device
+        L"ParticleEffect_Yellow", L"jewel_particle_yellow@2x.png", 1, 1, 0.1f, device
     );
 }
 
-void ParticleManager::SpawnParticleEffect(const std::string& texturename, FVector3 position, int count, float speed, float lifetime) {
+void ParticleManager::SpawnParticleEffect(const std::wstring& texturename, FVector3 position, int count, float speed, float lifetime) {
     for (int i = 0; i < count; i++) {
         float angle = RandomFloat(0.0f, 6.283185f); // 0 ~ 2¥ð (360µµ)
         float particleSpeed = RandomFloat(speed * 0.5f, speed * 1.5f);

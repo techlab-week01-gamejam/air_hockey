@@ -12,20 +12,20 @@ public:
 	static TextureManager* GetInstance();
 
 	void Initiallize(ID3D11Device* device, ID3D11DeviceContext* context);
-	ID3D11ShaderResourceView* LoadTexture(const std::string& filename);
-	ID3D11ShaderResourceView* GetTexture(const std::string& filename);
+	ID3D11ShaderResourceView* LoadTexture(const std::wstring& filename);
+	ID3D11ShaderResourceView* GetTexture(const std::wstring& filename);
 	void Release();
 
 private:
 	TextureManager();
 	~TextureManager();
 
-	HRESULT LoadTextureFromFile(const std::string& filename, ID3D11ShaderResourceView** textureView);
+	HRESULT LoadTextureFromFile(const std::wstring& filename, ID3D11ShaderResourceView** textureView);
 	std::wstring StringToWString(const std::string& str);
 
 	static TextureManager* Instance;
 	ID3D11Device* Device;
 	ID3D11DeviceContext* DeviceContext;
-	std::unordered_map<std::string, ID3D11ShaderResourceView*> TextureCache;
-	std::string GetTexturePath();
+	std::unordered_map<std::wstring, ID3D11ShaderResourceView*> TextureCache;
+	std::wstring GetTexturePath();
 };

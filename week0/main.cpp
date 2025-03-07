@@ -607,11 +607,11 @@ public:
             Location += Correction;
             Other.Location -= Correction;
             // 충돌시 사운드 재생
-            SoundManager::GetInstance()->PlaySFX("Hit");
+            SoundManager::GetInstance()->PlaySFX(L"Hit");
           
             // 충돌시 이펙트 재생 
             FVector3 collisionPoint = (Location + Other.Location) * 0.5f;
-            SpriteAnimationManager::GetInstance()->PlayAnimation("Hit1",collisionPoint, 0.2f);
+            SpriteAnimationManager::GetInstance()->PlayAnimation(L"Hit1",collisionPoint, 0.2f);
         }
     }
 
@@ -676,11 +676,11 @@ public:
 
         if (Distance < MinDist) // 아이템과 공이 충돌하면
         {
-            SoundManager::GetInstance()->PlaySFX("ItemPickup");
+            SoundManager::GetInstance()->PlaySFX(L"ItemPickup");
 
             // 충돌시 이펙트 재생 
             FVector3 collisionPoint = (Location + Other.Location) * 0.5f;
-            ParticleManager::GetInstance()->SpawnParticleEffect("ParticleEffect_Blue",collisionPoint, 8, 0.08f, 1.0f);
+            ParticleManager::GetInstance()->SpawnParticleEffect(L"ParticleEffect_Blue",collisionPoint, 8, 0.08f, 1.0f);
             return true;
         }
 
@@ -929,11 +929,11 @@ public:
             Other.Location -= Correction;
 
             // 충돌시 사운드 재생
-            SoundManager::GetInstance()->PlaySFX("Hit");
+            SoundManager::GetInstance()->PlaySFX(L"Hit");
 
             // 충돌시 애니메이션 재생
 			FVector3 collisionPoint = (Location + Other.Location) * 0.5f;
-			SpriteAnimationManager::GetInstance()->PlayAnimation("Hit1", collisionPoint, 0.2f);
+			SpriteAnimationManager::GetInstance()->PlayAnimation(L"Hit1", collisionPoint, 0.2f);
            // ParticleManager::GetInstance()->SpawnParticleEffect(collisionPoint, 10, 0.1f, 1.0f);
 
             // 공에게 마지막으로 공격한 플레이어가 누구인지 전달
@@ -1290,8 +1290,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     // D3D11 생성하는 함수를 호출합니다.
     renderer.Create(hWnd);
+
     // 렌더러 생성 직후에 쉐이더를 생성하는 함수를 호출합니다.
     renderer.CreateShader();
+    MessageBox(nullptr, L"Welcome to Game Tech Lab!", L"Game Tech Lab", MB_OK);
     renderer.CreateConstantBuffer();
 
 
@@ -1318,6 +1320,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         vertical[i].x *= 0.1f;
         vertical[i].y *= 1.0f;
     }
+
     ID3D11Buffer* vertexBufferHorizontal = renderer.CreateVertexBuffer(horizontal, sizeof(horizontal));
     ID3D11Buffer* vertexBufferVertical = renderer.CreateVertexBuffer(vertical, sizeof(vertical));
 
@@ -1365,7 +1368,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     FVector3 offsetHoleB(1.0f, 0.0f, 0.0f);
 
     bool bIsExit = false;
-
     // UI Manager
     UIManager* HUD = new UIManager();
     HUD->Initialize(renderer.Device, renderer.DeviceContext, hWnd);
@@ -1386,29 +1388,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     /* SoundManager  초기화 */
     SoundManager* SoundMgr = SoundManager::GetInstance();
-
+ 
     if (!SoundMgr->Initialize()) {
-        return -1;
+        //return -1;
     }
 
-    SoundMgr->LoadSound("Hit", "hit.mp3");
-    SoundMgr->LoadSound("Score", "score_1.mp3");
-    SoundMgr->LoadSound("Click", "click.mp3");
-    SoundMgr->LoadSound("GameStart", "game_start.mp3");
-    SoundMgr->LoadSound("ItemPickup", "item_pickup.mp3");
+    SoundMgr->LoadSound(L"Hit", L"hit.mp3");
+    SoundMgr->LoadSound(L"Score", L"score_1.mp3");
+    SoundMgr->LoadSound(L"Click", L"click.mp3");
+    SoundMgr->LoadSound(L"GameStart", L"game_start.mp3");
+    SoundMgr->LoadSound(L"ItemPickup", L"item_pickup.mp3");
 
     /* TextureManager 초기화*/
     TextureManager::GetInstance()->Initiallize(renderer.Device, renderer.DeviceContext);
 
 	/* SpriteAnimationManager 초기화*/ 
     SpriteAnimationManager::GetInstance()->Initialize(renderer.Device);
-
+  
     /* ParticleManager 초기화 */
     ParticleManager::GetInstance()->Initialize(renderer.Device);
 
     // 충돌 애니메이션 등록
-	SpriteAnimationManager::GetInstance()->RegisterAnimation("Hit1", "hit_1.png", 1, 5, 0.05f, renderer.Device);
-    SpriteAnimationManager::GetInstance()->RegisterAnimation("Hit2", "hit_2.png", 1, 4, 0.05f, renderer.Device);
+	SpriteAnimationManager::GetInstance()->RegisterAnimation(L"Hit1", L"hit_1.png", 1, 5, 0.05f, renderer.Device);
+    SpriteAnimationManager::GetInstance()->RegisterAnimation(L"Hit2", L"hit_2.png", 1, 4, 0.05f, renderer.Device);
 
     //플레이어A, B 이동속도
     float moveA = 0.03f;
@@ -1434,6 +1436,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     bool isMovingLeftB = false;  // B가 왼쪽으로 이동 중인지
     bool isReturningB = false;   // B가 원래 위치로 돌아오는 중인지
+
 
     // Main Loop (Quit Message가 들어오기 전까지 아래 Loop를 무한히 실행하게 됨)
     while (bIsExit == false)

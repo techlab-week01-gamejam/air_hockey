@@ -39,7 +39,7 @@ bool SoundManager::Initialize() {
 }
 
 void SoundManager::Release() {
-	std::unordered_map<std::string, FMOD::Sound*>::iterator iter;
+	std::unordered_map<std::wstring, FMOD::Sound*>::iterator iter;
 	for (iter = SoundMap.begin(); SoundMap.end() != iter; ++iter) {
 		if (nullptr != iter->second) {
 			iter->second->release();
@@ -66,43 +66,45 @@ void SoundManager::Release() {
 
 /* sound 폴더 경로 반환 */
 /* 모든 효과음, BGM과 같은 음악 파일은 recource/sound 폴더에 넣어주세요! */
-std::string SoundManager::GetSoundPath() {
-	char path[MAX_PATH];
-	GetModuleFileNameA(nullptr, path, MAX_PATH);
-	std::string exePath(path);
+std::wstring SoundManager::GetSoundPath() {
+	wchar_t wpath[MAX_PATH];
+	GetModuleFileNameW(nullptr, wpath, MAX_PATH);
+	std::wstring exePath(wpath);
 
 	// 실행 파일이 있는 디렉터리 가져오기
-	std::string currentDir = exePath.substr(0, exePath.find_last_of("\\/"));
+	std::wstring currentDir = exePath.substr(0, exePath.find_last_of(L"\\/"));
 
 	// 두 단계 상위 폴더로 이동 후 "resource/sound/" 추가
-	std::string resourcePath = currentDir + "\\..\\..\\resource\\sound";
+	std::wstring resourcePath = currentDir + L"\\..\\..\\resource\\sound";
 
 	return resourcePath;
 }
 
-void SoundManager::LoadSound(const std::string& SoundName, const std::string& FilePath, bool Loop) {
+void SoundManager::LoadSound(const std::wstring& SoundName, const std::wstring& FilePath, bool Loop) {
 	if (SoundMap.find(SoundName) != SoundMap.end()) {
 		return; // 이미 로드된 사운드
 	}
 
-	std::string FullPath = GetSoundPath() + "\\" + FilePath;
+	std::wstring wFullPath = GetSoundPath() + L"\\" + FilePath;
 
 	FMOD::Sound* NewSound = nullptr;
 	FMOD_MODE Mode = Loop ? FMOD_LOOP_NORMAL : FMOD_DEFAULT;
 
-	if (FMOD_OK != FMODSystem->createSound(FullPath.c_str(), Mode, nullptr, &NewSound)) {
-		std::cerr << "[Error] 사운드 로드 실패: " << FullPath << std::endl;
+	std::string strPath = WideToUTF8(wFullPath);
+
+	if (FMOD_OK != FMODSystem->createSound(strPath.c_str(), Mode, nullptr, &NewSound)) {
+		std::cerr << "[Error] 사운드 로드 실패: " << strPath << std::endl;
 		return;
 	}
 
 	SoundMap.insert(std::make_pair(SoundName, NewSound));
-	std::cout << "[Log] 사운드 로드 완료: " << SoundName << std::endl;
+	std::cout << "[Log] 사운드 로드 완료: " << SoundName.c_str() << std::endl;
 }
 
-void SoundManager::PlayBGM(const std::string& BGMName, float Volume) {
-	std::unordered_map<std::string, FMOD::Sound*>::iterator iter = SoundMap.find(BGMName);
+void SoundManager::PlayBGM(const std::wstring& BGMName, float Volume) {
+	std::unordered_map<std::wstring, FMOD::Sound*>::iterator iter = SoundMap.find(BGMName);
 	if (SoundMap.end() == iter) {
-		std::cerr << "[Error] BGM을 찾을 수 없음: " << BGMName << std::endl;
+		std::cerr << "[Error] BGM을 찾을 수 없음: " << BGMName.c_str() << std::endl;
 		return;
 	}
 
@@ -115,7 +117,7 @@ void SoundManager::PlayBGM(const std::string& BGMName, float Volume) {
 
 	if (FMOD_OK == FMODSystem->playSound(CurrentBGM, nullptr, false, &BGMChannel)) {
 		BGMChannel->setVolume(Volume);
-		std::cout << "[Log] BGM 재생: " << BGMName << std::endl;
+		std::cout << "[Log] BGM 재생: " << BGMName.c_str() << std::endl;
 	}
 }
 
@@ -126,17 +128,17 @@ void SoundManager::StopBGM() {
 	}
 }
 
-void SoundManager::PlaySFX(const std::string& SFXName, float Volume) {
-	std::unordered_map<std::string, FMOD::Sound*>::iterator iter = SoundMap.find(SFXName);
+void SoundManager::PlaySFX(const std::wstring& SFXName, float Volume) {
+	std::unordered_map<std::wstring, FMOD::Sound*>::iterator iter = SoundMap.find(SFXName);
 	if (SoundMap.end() == iter) {
-		std::cerr << "[Error] 효과음을 찾을 수 없음: " << SFXName << std::endl;
+		std::cerr << "[Error] 효과음을 찾을 수 없음: " << SFXName.c_str() << std::endl;
 		return;
 	}
 
 	FMOD::Channel* Channel = nullptr;
 	if (FMOD_OK == FMODSystem->playSound(iter->second, nullptr, false, &Channel)) {
 		Channel->setVolume(Volume);
-		std::cout << "[Log] 효과음 재생: " << SFXName << std::endl;
+		std::cout << "[Log] 효과음 재생: " << SFXName.c_str() << std::endl;
 	}
 }
 

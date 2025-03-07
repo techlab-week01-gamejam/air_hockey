@@ -10,9 +10,9 @@ struct Particle {
     FVector3 Velocity;   // 속도
     float Lifetime;      // 남은 수명
     float Alpha;         // 투명도
-    std::string TextureName; // 텍스처 이름
+    std::wstring TextureName; // 텍스처 이름
 
-    Particle(FVector3 pos, FVector3 vel, float lifetime, const std::string&  textureName)
+    Particle(FVector3 pos, FVector3 vel, float lifetime, const std::wstring&  textureName)
         : Position(pos), Velocity(vel), Lifetime(lifetime), Alpha(1.f), TextureName(textureName){
     }
 };
@@ -22,7 +22,7 @@ public:
     static ParticleManager* GetInstance();
 
     void Initialize(ID3D11Device* device);
-    void SpawnParticleEffect(const std::string& texturename, FVector3 position, int count, float speed, float lifetime);
+    void SpawnParticleEffect(const std::wstring& texturename, FVector3 position, int count, float speed, float lifetime);
     void Update(float deltaTime);
     void Render(ID3D11DeviceContext* context);
     void Release();

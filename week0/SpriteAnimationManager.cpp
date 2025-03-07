@@ -17,7 +17,7 @@ void SpriteAnimationManager::Initialize(ID3D11Device* device) {
 }
 
 
-void SpriteAnimationManager::RegisterAnimation(const std::string& name, const std::string& filename, int rows, int cols, float frameTime, ID3D11Device* device) {
+void SpriteAnimationManager::RegisterAnimation(const std::wstring& name, const std::wstring& filename, int rows, int cols, float frameTime, ID3D11Device* device) {
 	if (Animations.end() != Animations.find(name))
 		return;
 
@@ -67,7 +67,7 @@ void SpriteAnimationManager::Update(float deltaTime) {
 	}
 }
 
-void SpriteAnimationManager::GetUV(const std::string& name, float& u, float& v, float& w, float& h) {
+void SpriteAnimationManager::GetUV(const std::wstring& name, float& u, float& v, float& w, float& h) {
 	if (Animations.end() == Animations.find(name))
 		return;
 
@@ -82,7 +82,7 @@ void SpriteAnimationManager::GetUV(const std::string& name, float& u, float& v, 
 	h = 1.0f / (float)animation.Rows;
 }
 
-void SpriteAnimationManager::PlayAnimation(const std::string& name, FVector3 position, float scale){
+void SpriteAnimationManager::PlayAnimation(const std::wstring& name, FVector3 position, float scale){
 	if (Animations.end() == Animations.find(name))
 		return;
 
@@ -149,7 +149,7 @@ void SpriteAnimationManager::Render(ID3D11DeviceContext* context) {
 	}
 }
 
-void SpriteAnimationManager::RenderAnimation(ID3D11DeviceContext* context, const std::string& name, FVector3 position, float scale,int frameIndex) {
+void SpriteAnimationManager::RenderAnimation(ID3D11DeviceContext* context, const std::wstring& name, FVector3 position, float scale,int frameIndex) {
 	if (Animations.end() == Animations.find(name))
 		return;
 
@@ -221,7 +221,7 @@ SpriteAnimationManager::SpriteAnimationManager() {
 }	
 
 SpriteAnimationManager::~SpriteAnimationManager() {
-	std::unordered_map<std::string, AnimationData>::iterator iter;
+	std::unordered_map<std::wstring, AnimationData>::iterator iter;
 
 	for (iter = Animations.begin(); Animations.end() != iter; ++iter) {
 		if (nullptr != iter->second.ConstantBuffer) {
