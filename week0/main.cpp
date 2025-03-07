@@ -1061,7 +1061,7 @@ public:
             BallList[i]->Move();
             isGoal = BallList[i]->CheckWallCollision();
             if (isGoal == 'A' || isGoal == 'B') {
-                if (scoreA == 10 || scoreB == 10) {
+                if (scoreA == 3 || scoreB == 3) {
                     while (BallCount > 0)
                         RemoveBall(BallCount - 1);
                     CorkA->SetInit(FVector3(-0.875f, 0.0f, 0.0f));
